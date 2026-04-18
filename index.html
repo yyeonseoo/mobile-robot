@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>테미 프로젝트 — 실행 안내</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 640px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.55;
+      }
+      code {
+        background: #f1f5f9;
+        padding: 0.15rem 0.35rem;
+        border-radius: 4px;
+      }
+      a {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>테미 · 스탬프 랠리 MVP</h1>
+    <p>
+      키오스크·모바일 화면은 Spring Boot 정적 리소스로 제공됩니다. 아래를 실행한 뒤 브라우저에서
+      링크를 여세요.
+    </p>
+    <pre><code>cd stamp-rally-server &amp;&amp; mvn spring-boot:run</code></pre>
+    <ul>
+      <li><a href="http://localhost:8080/temi/index.html">테미 메인</a> (1920×1200 권장)</li>
+      <li><a href="http://localhost:8080/mobile/index.html">모바일 입장</a></li>
+      <li><a href="http://localhost:8080/temi/stamp-codes.html">스탬프 QR 4종 (현장 배치 데모)</a></li>
+    </ul>
+    <p>
+      저장소 루트의 예전 <code>css/style.css</code>·<code>index.html</code>은 파일로 직접 열 때용이며,
+      API 연동은 위 주소에서 확인하는 것이 맞습니다.
+    </p>
+  </body>
+</html>

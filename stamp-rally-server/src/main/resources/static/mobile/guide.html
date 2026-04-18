@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>전시장 안내</title>
+    <link rel="stylesheet" href="mobile.css" />
+  </head>
+  <body>
+    <h1>전시장 안내</h1>
+    <p class="nav-row" style="margin-bottom: 0.75rem">
+      <a href="index.html" style="flex: 0 0 auto; padding: 0.5rem 0.75rem">← 입장</a>
+      <a href="rally.html" style="flex: 0 0 auto; padding: 0.5rem 0.75rem">랠리</a>
+    </p>
+
+    <div class="card" id="searchCard">
+      <label for="q">전시 이름 검색</label>
+      <input id="q" type="search" placeholder="이름 또는 구역" autocomplete="off" />
+    </div>
+
+    <div class="card" id="listCard">
+      <p class="muted" id="listHint">목록을 불러오는 중…</p>
+      <div id="list"></div>
+    </div>
+
+    <div class="card" id="detailCard" style="display: none">
+      <button type="button" class="btn-secondary" id="btnCloseDetail">목록으로</button>
+      <div id="detail"></div>
+      <button type="button" class="btn-primary" id="btnRoute">길안내 시작 (데모)</button>
+    </div>
+
+    <script>
+      var TOKEN_KEY = "stampRallyVisitorToken";
+      function origin() {
+        return location.origin;
+      }
+      function qsId() {
+        var m = new RegExp("[?&]id=([^&]*)").exec(location.search);
+        return m ? decodeURIComponent(m[1]) : "";
+      }
+
+      function distMeters(lat1, lon1, lat2, lon2) {
+        var R = 6371000;
+        var toR = Math.PI / 180;
+        var dLat = (lat2 - lat1) * toR;
+        var dLon = (lon2 - lon1) * toR;
+        var a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toR) * Math.cos(lat2 * toR) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(R * c);
+      }
+
+      var all = [];
+
+      function renderList(filter) {
+        var box = document.getElementById("list");
+        box.innerHTML = "";
+        var f = (filter || "").toLowerCase();
+        all
+          .filter(function (ex) {
+            if (!f) return true;
+            return (
+              (ex.name + ex.zone + ex.locationText).toLowerCase().indexOf(f) >= 0
+            );
+          })
+          .forEach(function (ex) {
+            var a = document.createElement("a");
+            a.href = "#";
+            a.textContent = ex.name + " · " + ex.zone;
+            a.style.display = "block";
+            a.style.padding = "0.65rem 0";
+            a.style.borderBottom = "1px solid #334155";
+            a.style.color = "inherit";
+            a.style.textDecoration = "none";
+            a.onclick = function (ev) {
+              ev.preventDefault();
+              openDetail(ex.id);
+            };
+            box.appendChild(a);
+          });
+      }
+
+      function openDetail(id) {
+        document.getElementById("listCard").style.display = "none";
+        document.getElementById("searchCard").style.display = "none";
+        document.getElementById("detailCard").style.display = "block";
+        document.getElementById("detail").innerHTML = "<p class='muted'>불러오는 중…</p>";
+        fetch(origin() + "/api/exhibitions/" + encodeURIComponent(id))
+          .then(function (r) {
+            if (!r.ok) throw new Error("조회 실패");
+            return r.json();
+          })
+          .then(function (ex) {
+            function show(html) {
+              document.getElementById("detail").innerHTML = html;
+            }
+            var base =
+              "<h2 style='margin:0 0 0.5rem'>" +
+              ex.name +
+              "</h2>" +
+              "<p class='muted'>" +
+              ex.zone +
+              " · " +
+              ex.locationText +
+              "</p>" +
+              "<p style='line-height:1.55'>" +
+              ex.description +
+              "</p>" +
+              "<p class='muted'>예상 이동 약 " +
+              ex.estimatedMinutes +
+              "분 · " +
+              ex.directionHint +
+              "</p>";
+            if (!navigator.geolocation) {
+              show(base + "<p class='muted'>거리: 위치 권한을 주면 표시합니다.</p>");
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(
+              function (pos) {
+                var d = distMeters(
+                  pos.coords.latitude,
+                  pos.coords.longitude,
+                  ex.latitude,
+                  ex.longitude
+                );
+                show(base + "<p><strong>현재 위치 기준 약 " + d + "m</strong></p>");
+              },
+              function () {
+                show(base + "<p class='muted'>거리를 표시하려면 위치 권한을 허용해 주세요.</p>");
+              },
+              { enableHighAccuracy: true, timeout: 12000 }
+            );
+          })
+          .catch(function () {
+            document.getElementById("detail").innerHTML = "<p>불러오지 못했습니다.</p>";
+          });
+        history.replaceState({}, "", "guide.html?id=" + encodeURIComponent(id));
+      }
+
+      document.getElementById("btnCloseDetail").onclick = function () {
+        document.getElementById("detailCard").style.display = "none";
+        document.getElementById("listCard").style.display = "block";
+        document.getElementById("searchCard").style.display = "block";
+        history.replaceState({}, "", "guide.html");
+      };
+
+      document.getElementById("btnRoute").onclick = function () {
+        alert("데모: 실제 앱에서는 경로 polyline·내비 연동을 붙입니다.");
+      };
+
+      document.getElementById("q").addEventListener("input", function () {
+        renderList(document.getElementById("q").value);
+      });
+
+      fetch(origin() + "/api/exhibitions")
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (rows) {
+          all = rows;
+          document.getElementById("listHint").textContent = "총 " + rows.length + "개 전시";
+          renderList("");
+          var id = qsId();
+          if (id) openDetail(id);
+        })
+        .catch(function () {
+          document.getElementById("listHint").textContent = "API를 불러오지 못했습니다.";
+        });
+    </script>
+  </body>
+</html>
