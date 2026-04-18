@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>테미 프로젝트 — 실행 안내</title>
+    <title>테미 프로젝트 — Android Studio 실행 안내</title>
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -25,10 +25,21 @@
   <body>
     <h1>테미 · 스탬프 랠리 MVP</h1>
     <p>
-      키오스크·모바일 화면은 Spring Boot 정적 리소스로 제공됩니다. 아래를 실행한 뒤 브라우저에서
-      링크를 여세요.
+      키오스크·모바일 화면은 Spring Boot 정적 리소스로 제공됩니다. <strong>Android Studio</strong> 기준으로
+      서버를 띄운 뒤 아래 링크를 브라우저에서 여세요.
     </p>
-    <pre><code>cd stamp-rally-server &amp;&amp; mvn spring-boot:run</code></pre>
+    <ol>
+      <li><strong>File → Open</strong> → 이 저장소의 <code>stamp-rally-server</code> 폴더 선택 (<code>pom.xml</code> 있는 폴더)</li>
+      <li>Maven 가져오기가 끝날 때까지 대기</li>
+      <li>
+        <code>StampRallyApplication.java</code>에서 <strong>Run</strong> (또는 Maven →
+        <code>spring-boot:run</code>)
+      </li>
+    </ol>
+    <p>
+      터미널만 쓸 경우:
+      <code>cd stamp-rally-server &amp;&amp; mvn spring-boot:run</code>
+    </p>
     <ul>
       <li><a href="http://localhost:8080/temi/index.html">테미 메인</a> (1920×1200 권장)</li>
       <li><a href="http://localhost:8080/mobile/index.html">모바일 입장</a></li>
