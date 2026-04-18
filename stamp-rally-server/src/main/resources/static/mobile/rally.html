@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>스탬프 랠리</title>
+    <link rel="stylesheet" href="mobile.css" />
+  </head>
+  <body>
+    <h1>스탬프 랠리</h1>
+    <p class="nav-row" style="margin-bottom: 0.75rem">
+      <a href="index.html" style="flex: 0 0 auto; padding: 0.5rem 0.75rem">← 입장</a>
+      <a href="guide.html" style="flex: 0 0 auto; padding: 0.5rem 0.75rem">전시 안내</a>
+    </p>
+
+    <div class="complete-banner" id="completeBox" style="display: none">
+      <div class="badge-ok" style="font-size: 1.2rem; margin-bottom: 0.35rem">랠리 완료!</div>
+      <div>안내 데스크에서 기념 스티커를 받아가세요. (데모 문구)</div>
+    </div>
+
+    <div class="card">
+      <p class="muted" id="metaLine">진행률</p>
+      <div class="progress"><i id="bar"></i></div>
+      <p id="progressText" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <label for="qrInput">스탬프 코드 입력 (또는 QR로 이 페이지 열기)</label>
+      <input id="qrInput" placeholder="예: RALLY-1" autocomplete="off" />
+      <button type="button" class="btn-primary" id="btnClaim">스탬프 받기</button>
+      <p class="muted" id="claimMsg"></p>
+    </div>
+
+    <div class="card">
+      <button type="button" class="btn-secondary" id="btnGps">GPS로 근처 스탬프 받기 (선택)</button>
+      <p class="muted" id="gpsMsg"></p>
+    </div>
+
+    <div class="card">
+      <button type="button" class="btn-secondary" id="btnRefresh">목록 새로고침</button>
+      <ul id="stampList" style="list-style: none; padding: 0; margin: 0"></ul>
+    </div>
+
+    <script>
+      var TOKEN_KEY = "stampRallyVisitorToken";
+
+      function origin() {
+        return location.origin;
+      }
+      function token() {
+        return localStorage.getItem(TOKEN_KEY) || "";
+      }
+
+      function authHeaders() {
+        return { "X-Visitor-Token": token() };
+      }
+
+      function setBar(collected, total) {
+        var pct = total > 0 ? Math.round((collected * 100) / total) : 0;
+        document.getElementById("bar").style.width = pct + "%";
+        document.getElementById("progressText").textContent =
+          collected + " / " + total + " 수집";
+      }
+
+      function refreshMeta() {
+        if (!token()) {
+          document.getElementById("metaLine").textContent =
+            "세션이 없습니다. 입장 페이지에서 시작하기를 눌러 주세요.";
+          setBar(0, 0);
+          document.getElementById("completeBox").style.display = "none";
+          return;
+        }
+        fetch(origin() + "/api/rally/meta")
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (meta) {
+            document.getElementById("metaLine").textContent = meta.eventTitle;
+            return fetch(origin() + "/api/rally/status", { headers: authHeaders() }).then(
+              function (r) {
+                if (!r.ok) throw new Error("status");
+                return r.json();
+              }
+            );
+          })
+          .then(function (st) {
+            setBar(st.collectedCount, st.totalSpots);
+            document.getElementById("completeBox").style.display = st.completed
+              ? "block"
+              : "none";
+          })
+          .catch(function () {
+            document.getElementById("metaLine").textContent = "상태를 불러오지 못했습니다.";
+          });
+      }
+
+      function refreshList() {
+        var ul = document.getElementById("stampList");
+        ul.innerHTML = "";
+        if (!token()) {
+          ul.innerHTML = "<li class='muted'>세션 없음</li>";
+          return;
+        }
+        fetch(origin() + "/api/my-stamps", { headers: authHeaders() })
+          .then(function (r) {
+            if (!r.ok) throw new Error("fail");
+            return r.json();
+          })
+          .then(function (items) {
+            if (!items.length) {
+              ul.innerHTML = "<li class='muted'>아직 없음</li>";
+              return;
+            }
+            items.forEach(function (s) {
+              var li = document.createElement("li");
+              li.style.padding = "0.55rem 0";
+              li.style.borderBottom = "1px solid #334155";
+              li.innerHTML =
+                "<strong>" +
+                s.spotName +
+                "</strong> <span class='muted'>" +
+                s.spotCode +
+                "</span>";
+              ul.appendChild(li);
+            });
+          })
+          .catch(function () {
+            ul.innerHTML = "<li class='muted'>조회 실패</li>";
+          });
+      }
+
+      function tryClaim(code, silent) {
+        var t = token();
+        if (!t) {
+          if (!silent) alert("입장 페이지에서 세션을 만든 뒤 다시 시도해 주세요.");
+          return Promise.resolve();
+        }
+        return fetch(origin() + "/api/stamps/claim", {
+          method: "POST",
+          headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+          body: JSON.stringify({ qrValue: code }),
+        })
+          .then(function (r) {
+            if (r.status === 404) throw new Error("코드를 찾을 수 없습니다.");
+            if (!r.ok) throw new Error("적립 실패 " + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            var msg = data.newlyCollected
+              ? "새 스탬프를 받았습니다: " + data.spotName
+              : data.alreadyHad
+              ? "이미 받은 스탬프입니다: " + data.spotName
+              : "";
+            document.getElementById("claimMsg").textContent = msg;
+            refreshMeta();
+            refreshList();
+            if (data.rallyComplete) {
+              document.getElementById("completeBox").style.display = "block";
+            }
+          })
+          .catch(function (e) {
+            if (!silent) document.getElementById("claimMsg").textContent = e.message;
+          });
+      }
+
+      document.getElementById("btnClaim").onclick = function () {
+        var v = (document.getElementById("qrInput").value || "").trim();
+        if (!v) {
+          document.getElementById("claimMsg").textContent = "코드를 입력하세요.";
+          return;
+        }
+        tryClaim(v, false);
+      };
+
+      document.getElementById("btnRefresh").onclick = function () {
+        refreshMeta();
+        refreshList();
+      };
+
+      document.getElementById("btnGps").onclick = function () {
+        var t = token();
+        var el = document.getElementById("gpsMsg");
+        if (!t) {
+          el.textContent = "세션이 필요합니다.";
+          return;
+        }
+        if (!navigator.geolocation) {
+          el.textContent = "이 브라우저는 위치를 지원하지 않습니다.";
+          return;
+        }
+        el.textContent = "위치 확인 중…";
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            fetch(origin() + "/api/location", {
+              method: "POST",
+              headers: Object.assign(
+                { "Content-Type": "application/json" },
+                authHeaders()
+              ),
+              body: JSON.stringify({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              }),
+            })
+              .then(function (r) {
+                if (!r.ok) throw new Error("전송 실패");
+                return r.json();
+              })
+              .then(function (data) {
+                el.textContent =
+                  data.newlyCollected.length > 0
+                    ? "근처에서 " + data.newlyCollected.length + "개 획득!"
+                    : "이번에는 새 스탬프가 없습니다.";
+                refreshMeta();
+                refreshList();
+              })
+              .catch(function (e) {
+                el.textContent = e.message;
+              });
+          },
+          function () {
+            el.textContent = "위치 권한을 허용해 주세요.";
+          },
+          { enableHighAccuracy: true, timeout: 15000 }
+        );
+      };
+
+      (function boot() {
+        var params = new URLSearchParams(location.search);
+        var claim = params.get("claim");
+        if (claim && !token()) {
+          sessionStorage.setItem("pendingClaim", claim.trim());
+          location.replace("index.html?next=rally");
+          return;
+        }
+        refreshMeta();
+        refreshList();
+        if (claim && token()) {
+          document.getElementById("qrInput").value = claim;
+          tryClaim(claim.trim(), true).finally(function () {
+            history.replaceState({}, "", "rally.html");
+          });
+        } else if (token()) {
+          var pending = sessionStorage.getItem("pendingClaim");
+          if (pending) {
+            sessionStorage.removeItem("pendingClaim");
+            document.getElementById("qrInput").value = pending;
+            tryClaim(pending, true);
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

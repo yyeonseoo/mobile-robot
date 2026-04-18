@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>모바일 — 입장</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="mobile.css" />
+  </head>
+  <body>
+    <h1>테미 연동 모바일</h1>
+    <p class="muted">닉네임은 선택 사항입니다. 공용 기기이므로 민감한 정보는 입력하지 마세요.</p>
+
+    <div class="card">
+      <label for="nickname">닉네임 (선택)</label>
+      <input id="nickname" maxlength="64" placeholder="예: 팀 A" autocomplete="nickname" />
+      <button type="button" class="btn-primary" id="btnStart">시작하기 · 세션 만들기</button>
+      <p class="muted" id="sessionLine">세션: 없음</p>
+    </div>
+
+    <div class="card">
+      <p class="muted" style="margin-top: 0">이용 안내</p>
+      <ul class="muted" style="margin: 0; padding-left: 1.1rem">
+        <li>전시장 안내: 구역·상세·거리(위치 허용 시)</li>
+        <li>스탬프 랠리: QR 또는 코드 입력으로 적립</li>
+        <li>브라우저를 닫기 전까지 이 기기에 세션이 저장됩니다.</li>
+      </ul>
+    </div>
+
+    <div class="card nav-row">
+      <a href="guide.html">전시장 안내</a>
+      <a href="rally.html">스탬프 랠리</a>
+    </div>
+
+    <script>
+      var TOKEN_KEY = "stampRallyVisitorToken";
+      var NICK_KEY = "stampRallyNickname";
+
+      function origin() {
+        return location.origin;
+      }
+
+      function showSession() {
+        var t = localStorage.getItem(TOKEN_KEY);
+        var n = localStorage.getItem(NICK_KEY);
+        document.getElementById("sessionLine").textContent = t
+          ? "세션: 연결됨" + (n ? " (" + n + ")" : "")
+          : "세션: 없음";
+      }
+      showSession();
+
+      document.getElementById("btnStart").onclick = function () {
+        var nick = (document.getElementById("nickname").value || "").trim();
+        fetch(origin() + "/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nick ? { nickname: nick } : {}),
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error("세션 실패 " + r.status);
+            return r.json();
+          })
+          .then(function (data) {
+            localStorage.setItem(TOKEN_KEY, data.visitorToken);
+            if (data.nickname) localStorage.setItem(NICK_KEY, data.nickname);
+            else localStorage.removeItem(NICK_KEY);
+            showSession();
+            if (new URLSearchParams(location.search).get("next") === "rally") {
+              location.href = "rally.html";
+            } else {
+              alert("세션이 발급되었습니다. 아래 메뉴에서 계속하세요.");
+            }
+          })
+          .catch(function (e) {
+            alert(e.message);
+          });
+      };
+    </script>
+  </body>
+</html>

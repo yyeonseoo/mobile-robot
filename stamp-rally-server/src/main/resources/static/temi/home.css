@@ -1,0 +1,184 @@
+/*
+ * 테미 홈(index.html) 전용 — style.css와 분리
+ * 브라우저가 style.css만 오래 캐시해도 홈은 이 파일을 새로 받습니다.
+ */
+
+html.temi-home-doc {
+  width: 1920px;
+  min-width: 1920px;
+  max-width: 1920px;
+  min-height: 1200px;
+  height: 1200px;
+  max-height: 1200px;
+  margin: 0 auto;
+  overflow: auto;
+  box-sizing: border-box;
+  background-color: #b8e4ff !important;
+  background-image: url("/asset/home-bg.png") !important;
+  background-position: top center !important;
+  background-size: 1920px 1200px !important;
+  background-repeat: no-repeat !important;
+}
+
+html.temi-home-doc body {
+  width: 1920px;
+  min-width: 1920px;
+  max-width: 1920px;
+  min-height: 1200px;
+  height: 1200px;
+  max-height: 1200px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent !important;
+  box-sizing: border-box;
+}
+
+body.temi-home .stage {
+  width: 1920px;
+  height: 1200px;
+  max-width: 1920px;
+  max-height: 1200px;
+  margin: 0;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+body.temi-home .top-bar h1 {
+  font-family: "Pinkfong Baby Shark", "Noto Sans KR", system-ui, sans-serif;
+  font-size: 150px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: #000000;
+  text-align: center;
+  text-shadow: none;
+}
+
+/* style.css의 flex:1 + min-height:0 때문에 그리드가 세로로 눌리지 않게 */
+body.temi-home .screen-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+body.temi-home .button-grid {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+  grid-template-columns: repeat(4, 397px);
+  grid-auto-rows: 550px;
+  justify-content: center;
+  align-content: center;
+  column-gap: 36px;
+  row-gap: 36px;
+}
+
+body.temi-home .button-grid .main-btn {
+  width: 397px;
+  height: 550px;
+  max-width: 397px;
+  max-height: 550px;
+  min-height: 550px;
+  padding: 0;
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: transparent;
+  /* 에셋 397×550과 동일: cover 대신 꽉 채워 잘림 방지 */
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--nav {
+  background: url("/asset/btn-guide.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--stamp {
+  background: url("/asset/btn-rally.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--photo {
+  background: url("/asset/btn-photo.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--event {
+  background: url("/asset/btn-event.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .voice-dock {
+  left: 50%;
+  right: auto;
+  width: 1920px;
+  max-width: 1920px;
+  margin: 0;
+  padding-left: 96px;
+  padding-right: 96px;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+}
+
+html.temi-home-doc body.temi-home .top-bar.top-bar--centered {
+  width: 100%;
+  justify-content: center;
+}
+
+html.temi-home-doc body.temi-home .top-bar__brand {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  margin-top: 64px;
+}
+
+html.temi-home-doc body.temi-home .top-bar h1 {
+  font-family: "Pinkfong Baby Shark", "Noto Sans KR", system-ui, sans-serif !important;
+  font-size: 150px !important;
+  font-weight: 700 !important;
+  line-height: 1.05 !important;
+  color: #000000 !important;
+  text-align: center !important;
+  text-shadow: none !important;
+}
+
+html.temi-home-doc body.temi-home .screen-body {
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid {
+  flex: 0 0 auto !important;
+  grid-auto-rows: 550px !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn {
+  width: 397px !important;
+  height: 550px !important;
+  max-width: 397px !important;
+  max-height: 550px !important;
+  min-height: 550px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 20px !important;
+  flex-shrink: 0 !important;
+  background-size: 100% 100% !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--nav {
+  background: url("/asset/btn-guide.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--stamp {
+  background: url("/asset/btn-rally.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--photo {
+  background: url("/asset/btn-photo.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--event {
+  background: url("/asset/btn-event.png") center center / 100% 100% no-repeat !important;
+}
