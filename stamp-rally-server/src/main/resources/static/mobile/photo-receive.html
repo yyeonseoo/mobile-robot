@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>사진 받기</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        --bg: #fff7fb;
+        --card: #ffffff;
+        --text: #3d1f1f;
+        --muted: #6b4a4a;
+        --accent: #e11d48;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px 16px 40px;
+      }
+      h1 {
+        font-size: 1.35rem;
+        margin: 0 0 8px;
+      }
+      p.lead {
+        margin: 0 0 20px;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+      .err {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 12px 14px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+      }
+      a.tile {
+        display: block;
+        background: var(--card);
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid #fecdd3;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      }
+      a.tile img {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        display: block;
+      }
+      a.tile span {
+        display: block;
+        padding: 10px 10px 12px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>촬영한 사진</h1>
+    <p class="lead">아래에서 사진을 길게 눌러 저장하거나, 다운로드를 눌러 저장하세요.</p>
+    <div id="err" class="err" hidden></div>
+    <div class="grid" id="grid"></div>
+
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var token = params.get("token");
+        var err = document.getElementById("err");
+        var grid = document.getElementById("grid");
+
+        function showError(msg) {
+          err.textContent = msg;
+          err.hidden = false;
+        }
+
+        if (!token) {
+          showError("토큰이 없습니다. 키오스크에서 다시 QR을 받아 주세요.");
+          return;
+        }
+
+        fetch("/api/photo-booth/sessions/" + encodeURIComponent(token))
+          .then(function (r) {
+            if (r.status === 404) throw new Error("만료되었거나 잘못된 링크입니다.");
+            if (!r.ok) throw new Error("불러오기에 실패했습니다.");
+            return r.json();
+          })
+          .then(function (data) {
+            var photos = data.photos || [];
+            if (!photos.length) {
+              showError("아직 올라온 사진이 없습니다. 키오스크에서 업로드가 끝난 뒤 다시 시도해 주세요.");
+              return;
+            }
+            photos.forEach(function (url, i) {
+              var abs = url.indexOf("http") === 0 ? url : location.origin + url;
+              var a = document.createElement("a");
+              a.className = "tile";
+              a.href = abs;
+              a.setAttribute("download", "photo-" + (i + 1) + ".png");
+              a.target = "_blank";
+              a.rel = "noopener";
+              var img = document.createElement("img");
+              img.src = abs;
+              img.alt = "사진 " + (i + 1);
+              var cap = document.createElement("span");
+              cap.textContent = "사진 " + (i + 1) + " 저장";
+              a.appendChild(img);
+              a.appendChild(cap);
+              grid.appendChild(a);
+            });
+          })
+          .catch(function (e) {
+            showError(e.message || "오류");
+          });
+      })();
+    </script>
+  </body>
+</html>

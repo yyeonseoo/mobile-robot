@@ -1,0 +1,455 @@
+/* 테미 1920×1200 — 사진 부스 인트로·촬영 공통 */
+
+html.pb-doc,
+html.pb-doc body {
+  width: 1920px;
+  min-width: 1920px;
+  max-width: 1920px;
+  min-height: 1200px;
+  height: 1200px;
+  max-height: 1200px;
+  margin: 0 auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.pb-frame {
+  position: relative;
+  width: 1920px;
+  height: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.pb-bg-record {
+  position: absolute;
+  inset: 0;
+  background: #fff url("/asset/banner-record-today.png") center top / 1920px auto no-repeat;
+  background-color: #fff;
+}
+
+.pb-bg-select {
+  position: absolute;
+  inset: 0;
+  background: #fff url("/asset/banner-select-photo-bg.png") center top / 1920px auto no-repeat;
+  background-color: #fff;
+}
+
+.pb-actions-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 749px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* photo-intro: 이미지 버튼 에셋 — 세로 높이 통일(auto 100%로 두 PNG 모두 같은 픽셀 높이로 스케일) */
+.pb-btn-asset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: auto 100%;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: none;
+  border-radius: 0;
+  height: 148px;
+  width: 500px;
+  overflow: hidden;
+}
+
+.pb-btn-asset:focus-visible {
+  outline: 4px solid #ff6b8a;
+  outline-offset: 6px;
+}
+
+.pb-btn-asset:active {
+  transform: scale(0.98);
+}
+
+.pb-btn-asset--go {
+  background-image: url("/asset/%EC%B4%AC%EC%98%81%ED%95%A0%EB%9E%98%EC%9A%94%20%EB%B2%84%ED%8A%BC.png");
+}
+
+.pb-btn-asset--cancel {
+  background-image: url("/asset/%EA%B4%9C%EC%B0%AE%EC%95%84%EC%9A%94%EB%B2%84%ED%8A%BC.png");
+}
+
+.pb-btn-primary,
+.pb-btn-secondary {
+  min-width: 420px;
+  min-height: 96px;
+  padding: 0 32px;
+  border-radius: 999px;
+  font-family: "Noto Sans KR", "Pinkfong Baby Shark", system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  cursor: pointer;
+  border: 3px solid rgba(90, 45, 45, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.pb-btn-primary {
+  background: linear-gradient(180deg, #ff8fa8 0%, #ff6b8a 100%);
+  color: #3d1f1f;
+}
+
+.pb-btn-secondary {
+  background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+  color: #4a2c2c;
+}
+
+.pb-btn-primary:active,
+.pb-btn-secondary:active {
+  transform: translateY(2px);
+}
+
+.pb-top-home {
+  position: absolute;
+  top: 28px;
+  left: 36px;
+  z-index: 3;
+}
+
+.pb-top-home a {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #5c2d2d;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 2px solid rgba(92, 45, 45, 0.2);
+}
+
+.pb-top-home a:hover {
+  text-decoration: underline;
+}
+
+/* 촬영 화면 */
+.pb-capture-stage {
+  position: relative;
+  width: 1920px;
+  height: 1200px;
+  box-sizing: border-box;
+  padding: 96px 56px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pb-capture-stage--fullscreen {
+  padding: 0;
+  gap: 0;
+  background: #000;
+}
+
+.pb-capture-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  z-index: 2;
+}
+
+.pb-capture-head--floating {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  justify-content: flex-start;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.pb-capture-head--floating .pb-top-home {
+  pointer-events: auto;
+}
+
+.pb-preview-full {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.pb-preview-full video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  background: #000;
+}
+
+.pb-bottom-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 18px 22px 22px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.62));
+}
+
+.pb-bottom-bar__hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+.pb-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1220px;
+  overflow: auto;
+  padding: 18px 10px 10px;
+  scrollbar-width: none;
+}
+
+.pb-filter-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-filter-strip .pb-chip {
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.pb-shutter {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  border: 8px solid rgba(255, 255, 255, 0.92);
+  background: rgba(255, 107, 138, 0.92);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.pb-shutter:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pb-shutter:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pb-capture-head .pb-top-home {
+  position: relative;
+  top: auto;
+  left: auto;
+}
+
+.pb-capture-head h1 {
+  margin: 0;
+  font-family: "Noto Sans KR", "Pinkfong Baby Shark", system-ui, sans-serif;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #4a2323;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.pb-capture-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
+  z-index: 2;
+}
+
+.pb-preview-wrap {
+  flex: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 28px;
+  border: 3px solid rgba(255, 182, 193, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+.pb-preview-inner {
+  position: relative;
+  width: 1280px;
+  max-width: 100%;
+  height: 720px;
+  max-height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #111;
+}
+
+.pb-preview-inner video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.pb-side {
+  flex: 0 0 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.pb-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pb-chip {
+  border: 2px solid rgba(90, 45, 45, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: #3d1f1f;
+  font-weight: 800;
+  font-size: 1.15rem;
+  padding: 12px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.pb-chip[aria-pressed="true"] {
+  border-color: #ff6b8a;
+  background: #ffe4ec;
+  box-shadow: 0 0 0 2px rgba(255, 107, 138, 0.35);
+}
+
+.pb-shot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 120px;
+  align-content: flex-start;
+  overflow: auto;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  border: 2px dashed rgba(255, 182, 193, 0.8);
+}
+
+.pb-shot-row img {
+  width: 112px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid rgba(90, 45, 45, 0.2);
+}
+
+.pb-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pb-big-btn {
+  min-height: 88px;
+  border-radius: 18px;
+  font-size: 1.65rem;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  border: 3px solid rgba(90, 45, 45, 0.28);
+}
+
+.pb-big-btn--snap {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%);
+  color: #0f172a;
+}
+
+.pb-big-btn--done {
+  background: linear-gradient(180deg, #c4b5fd 0%, #8b5cf6 100%);
+  color: #1e1b4b;
+}
+
+.pb-big-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* hidden 속성과 함께 쓸 때: display:flex만 두면 hidden이 무시되어 로드 직후 QR만 보임 */
+.pb-qr-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 250, 252, 0.96);
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+  text-align: center;
+}
+
+.pb-qr-overlay[hidden] {
+  display: none !important;
+}
+
+.pb-qr-overlay:not([hidden]) {
+  display: flex;
+}
+
+.pb-qr-overlay h2 {
+  margin: 0;
+  font-size: 2rem;
+  color: #3d1f1f;
+}
+
+.pb-qr-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 20px;
+  border: 4px solid #fecdd3;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+.pb-qr-box img {
+  display: block;
+  width: 320px;
+  height: 320px;
+}
+
+.pb-muted {
+  font-size: 1.1rem;
+  color: #6b4a4a;
+  max-width: 960px;
+  line-height: 1.5;
+}
+
+.pb-label {
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #4a2323;
+  margin: 4px 0 0;
+}
+
+.pb-hint {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #b45353;
+}
