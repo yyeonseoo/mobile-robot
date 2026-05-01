@@ -11,29 +11,33 @@
   </head>
   <body>
     <div class="pb-frame" role="application">
-      <div class="pb-capture-stage pb-capture-stage--fullscreen">
+      <div class="pb-bg-select" aria-hidden="true"></div>
+      <div class="pb-capture-stage pb-capture-stage--banner">
         <div class="pb-capture-head pb-capture-head--floating">
-          <div class="pb-top-home">
-            <a href="photo-intro.html">← 이전</a>
-          </div>
+          <div class="pb-top-home" hidden></div>
         </div>
 
-        <div class="pb-preview-full">
+        <div class="pb-preview-box" aria-label="카메라 화면">
           <video id="cam" playsinline autoplay muted></video>
         </div>
 
         <div class="pb-bottom-bar" role="group" aria-label="촬영 컨트롤">
-          <div class="pb-bottom-bar__hint" id="filterHint">필터를 먼저 선택해 주세요</div>
+          <div class="pb-bottom-bar__hint" id="filterHint" hidden></div>
           <div class="pb-filter-strip" id="filterChips" role="group" aria-label="필터 선택"></div>
           <button type="button" class="pb-shutter" id="btnSnap" disabled aria-label="촬영"></button>
         </div>
       </div>
 
       <div class="pb-qr-overlay" id="qrOverlay" hidden>
-        <h2>휴대폰으로 QR을 찍으면 사진을 받을 수 있어요</h2>
-        <div class="pb-qr-box"><img id="qrImg" width="320" height="320" alt="사진 받기 QR" /></div>
-        <p class="pb-muted" id="qrHint"></p>
-        <button type="button" class="pb-btn-primary" id="btnHome">홈으로</button>
+        <div class="pb-qr-stage">
+          <div class="pb-qr-box pb-qr-box--big">
+            <img id="qrImg" width="600" height="600" alt="사진 받기 QR" />
+          </div>
+          <div class="pb-qr-btn-row" aria-label="QR 액션 버튼">
+            <button type="button" class="pb-qr-btn pb-qr-btn--retake" id="btnRetake" aria-label="다시 찍기"></button>
+            <button type="button" class="pb-qr-btn pb-qr-btn--finish" id="btnFinish" aria-label="완료"></button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -76,6 +80,7 @@
           ctx.scale(-1, 1);
           ctx.drawImage(video, 0, 0, vw, vh, 0, 0, dw, dh);
           ctx.restore();
+
           ctx.filter = "none";
         }
 
@@ -99,11 +104,10 @@
         }
 
         function setFilter(f) {
-          state.filterCss = f.css;
           state.filterPicked = true;
+          state.filterCss = f.css;
           video.style.filter = f.css === "none" ? "" : f.css;
           btnSnap.disabled = false;
-          if (filterHint) filterHint.textContent = "";
         }
 
         renderChips(document.getElementById("filterChips"), filters, null, function (f) {
@@ -154,8 +158,6 @@
                 .then(function (token) {
                   var src = "/api/photo-booth/sessions/" + encodeURIComponent(token) + "/qr.png";
                   document.getElementById("qrImg").src = src + "?t=" + Date.now();
-                  document.getElementById("qrHint").textContent =
-                    "같은 Wi-Fi의 휴대폰에서 QR을 인식하면 됩니다. 인터넷에 공개할 주소를 쓰려면 서버에 app.photo-booth.public-base-url 을 설정하세요.";
                   document.getElementById("qrOverlay").hidden = false;
                 })
                 .catch(function (e) {
@@ -189,8 +191,14 @@
 
         btnSnap.addEventListener("click", snap);
 
-        document.getElementById("btnHome").addEventListener("click", function () {
+        document.getElementById("btnFinish").addEventListener("click", function () {
           location.href = "index.html";
+        });
+
+        document.getElementById("btnRetake").addEventListener("click", function () {
+          document.getElementById("qrOverlay").hidden = true;
+          document.getElementById("qrImg").removeAttribute("src");
+          if (state.filterPicked) btnSnap.disabled = false;
         });
 
         startCamera();
