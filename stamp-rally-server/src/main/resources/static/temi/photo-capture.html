@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko" class="pb-doc">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta name="viewport" content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>사진 촬영</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="photo-booth.css" />
+  </head>
+  <body>
+    <div class="pb-frame" role="application">
+      <div class="pb-capture-stage pb-capture-stage--fullscreen">
+        <div class="pb-capture-head pb-capture-head--floating">
+          <div class="pb-top-home">
+            <a href="photo-intro.html">← 이전</a>
+          </div>
+        </div>
+
+        <div class="pb-preview-full">
+          <video id="cam" playsinline autoplay muted></video>
+        </div>
+
+        <div class="pb-bottom-bar" role="group" aria-label="촬영 컨트롤">
+          <div class="pb-bottom-bar__hint" id="filterHint">필터를 먼저 선택해 주세요</div>
+          <div class="pb-filter-strip" id="filterChips" role="group" aria-label="필터 선택"></div>
+          <button type="button" class="pb-shutter" id="btnSnap" disabled aria-label="촬영"></button>
+        </div>
+      </div>
+
+      <div class="pb-qr-overlay" id="qrOverlay" hidden>
+        <h2>휴대폰으로 QR을 찍으면 사진을 받을 수 있어요</h2>
+        <div class="pb-qr-box"><img id="qrImg" width="320" height="320" alt="사진 받기 QR" /></div>
+        <p class="pb-muted" id="qrHint"></p>
+        <button type="button" class="pb-btn-primary" id="btnHome">홈으로</button>
+      </div>
+    </div>
+
+    <canvas id="work" width="1600" height="900" hidden></canvas>
+
+    <script>
+      (function () {
+        var video = document.getElementById("cam");
+        var work = document.getElementById("work");
+        var ctx = work.getContext("2d");
+        var btnSnap = document.getElementById("btnSnap");
+        var filterHint = document.getElementById("filterHint");
+
+        var filters = [
+          { id: "none", label: "원본", css: "none" },
+          { id: "warm", label: "따뜻한", css: "sepia(0.35) saturate(1.25) brightness(1.03)" },
+          { id: "mono", label: "흑백", css: "grayscale(1) contrast(1.05)" },
+          { id: "vivid", label: "선명", css: "contrast(1.12) saturate(1.45) brightness(1.04)" },
+          { id: "soft", label: "소프트", css: "brightness(1.06) blur(0.6px) saturate(0.95)" },
+        ];
+
+        var state = { filterCss: "none", filterPicked: false };
+
+        function drawFrame() {
+          var w = work.width;
+          var h = work.height;
+          ctx.fillStyle = "#111";
+          ctx.fillRect(0, 0, w, h);
+          if (!video.videoWidth) return;
+          var vw = video.videoWidth;
+          var vh = video.videoHeight;
+          var scale = Math.min(w / vw, h / vh) * 0.9;
+          var dw = vw * scale;
+          var dh = vh * scale;
+          var dx = (w - dw) / 2;
+          var dy = (h - dh) / 2;
+          ctx.save();
+          ctx.filter = state.filterCss;
+          ctx.translate(dx + dw, dy);
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, 0, 0, vw, vh, 0, 0, dw, dh);
+          ctx.restore();
+          ctx.filter = "none";
+        }
+
+        function renderChips(container, items, selectedId, onPick) {
+          container.innerHTML = "";
+          items.forEach(function (it) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "pb-chip";
+            b.textContent = it.label;
+            b.setAttribute("aria-pressed", selectedId != null && it.id === selectedId ? "true" : "false");
+            b.addEventListener("click", function () {
+              onPick(it);
+              Array.prototype.forEach.call(container.querySelectorAll("button"), function (x) {
+                x.setAttribute("aria-pressed", "false");
+              });
+              b.setAttribute("aria-pressed", "true");
+            });
+            container.appendChild(b);
+          });
+        }
+
+        function setFilter(f) {
+          state.filterCss = f.css;
+          state.filterPicked = true;
+          video.style.filter = f.css === "none" ? "" : f.css;
+          btnSnap.disabled = false;
+          if (filterHint) filterHint.textContent = "";
+        }
+
+        renderChips(document.getElementById("filterChips"), filters, null, function (f) {
+          setFilter(f);
+        });
+
+        function startCamera() {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("이 환경에서는 카메라를 사용할 수 없습니다.");
+            return;
+          }
+          navigator.mediaDevices
+            .getUserMedia({
+              video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+              audio: false,
+            })
+            .then(function (stream) {
+              video.srcObject = stream;
+            })
+            .catch(function () {
+              alert("카메라 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.");
+            });
+        }
+
+        function snap() {
+          if (!state.filterPicked) {
+            alert("먼저 필터를 선택해 주세요.");
+            return;
+          }
+          if (!video.videoWidth) {
+            alert("카메라가 준비될 때까지 잠시만 기다려 주세요.");
+            return;
+          }
+          drawFrame();
+          btnSnap.disabled = true;
+          work.toBlob(
+            function (blob) {
+              if (!blob) {
+                btnSnap.disabled = false;
+                return;
+              }
+              postSession()
+                .then(function (data) {
+                  return postPhoto(data.token, blob).then(function () {
+                    return data.token;
+                  });
+                })
+                .then(function (token) {
+                  var src = "/api/photo-booth/sessions/" + encodeURIComponent(token) + "/qr.png";
+                  document.getElementById("qrImg").src = src + "?t=" + Date.now();
+                  document.getElementById("qrHint").textContent =
+                    "같은 Wi-Fi의 휴대폰에서 QR을 인식하면 됩니다. 인터넷에 공개할 주소를 쓰려면 서버에 app.photo-booth.public-base-url 을 설정하세요.";
+                  document.getElementById("qrOverlay").hidden = false;
+                })
+                .catch(function (e) {
+                  alert(e.message || "오류가 났습니다.");
+                  btnSnap.disabled = false;
+                });
+            },
+            "image/png",
+            0.92
+          );
+        }
+
+        function postSession() {
+          return fetch("/api/photo-booth/sessions", { method: "POST" }).then(function (r) {
+            if (!r.ok) throw new Error("세션 생성 실패");
+            return r.json();
+          });
+        }
+
+        function postPhoto(token, blob) {
+          var fd = new FormData();
+          fd.append("file", blob, "capture.png");
+          return fetch("/api/photo-booth/sessions/" + encodeURIComponent(token) + "/photos", {
+            method: "POST",
+            body: fd,
+          }).then(function (r) {
+            if (!r.ok) throw new Error("업로드 실패");
+            return r.json();
+          });
+        }
+
+        btnSnap.addEventListener("click", snap);
+
+        document.getElementById("btnHome").addEventListener("click", function () {
+          location.href = "index.html";
+        });
+
+        startCamera();
+      })();
+    </script>
+  </body>
+</html>
