@@ -1,0 +1,95 @@
+<!DOCTYPE html> 
+<html lang="ko" class="temi-home-doc">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta
+      name="viewport"
+      content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>2026 포켓몬 페스티벌</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="css/style.css?v=__ASSET_VERSION__" />
+    <link rel="stylesheet" href="home.css?v=__ASSET_VERSION__" />
+  </head>
+  <body class="temi-home">
+    <div class="stage">
+      <header class="top-bar top-bar--centered">
+        <div class="top-bar__brand">
+          <h1>2026 포켓몬 페스티벌</h1>
+        </div>
+      </header>
+
+      <main class="screen-body" role="main">
+        <h2 class="visually-hidden">주요 메뉴</h2>
+        <div class="button-grid" role="toolbar" aria-label="주요 메뉴">
+          <button
+            type="button"
+            class="main-btn main-btn--nav"
+            data-nav="guide.html"
+            aria-label="전시장 안내"
+          ></button>
+          <button
+            type="button"
+            class="main-btn main-btn--stamp"
+            data-nav="rally-qr.html"
+            aria-label="스탬프 랠리"
+          ></button>
+          <button
+            type="button"
+            class="main-btn main-btn--photo"
+            data-nav="photo-intro.html"
+            aria-label="사진 찍기"
+          ></button>
+          <button
+            type="button"
+            class="main-btn main-btn--event"
+            data-nav="events.html"
+            aria-label="이벤트 안내"
+          ></button>
+        </div>
+      </main>
+
+      <div class="voice-dock">
+        <button type="button" class="voice-btn" id="btnVoice" aria-label="메뉴 음성 안내">
+          음성으로 메뉴 듣기
+        </button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var el = document.getElementById("locLine");
+        if (el) el.remove();
+        document.querySelectorAll(".top-bar__brand p.muted").forEach(function (n) {
+          n.remove();
+        });
+        document.querySelectorAll(".top-bar__brand > *").forEach(function (n) {
+          if (n.tagName && n.tagName.toLowerCase() === "h1") return;
+          if (n.textContent && n.textContent.indexOf("현재 위치") !== -1) n.remove();
+        });
+      })();
+
+      document.querySelectorAll("[data-nav]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          location.href = btn.getAttribute("data-nav");
+        });
+      });
+
+      document.getElementById("btnVoice").addEventListener("click", function () {
+        if (!window.speechSynthesis) {
+          alert("이 환경에서는 음성 합성을 지원하지 않습니다.");
+          return;
+        }
+        var u = new SpeechSynthesisUtterance(
+          "2026 포켓몬 페스티벌에 오신 것을 환영합니다. 전시장 안내, 스탬프 랠리, 사진 찍기, 이벤트 안내 중에서 원하는 버튼을 눌러 주세요."
+        );
+        u.lang = "ko-KR";
+        u.rate = 0.95;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      });
+    </script>
+  </body>
+</html>

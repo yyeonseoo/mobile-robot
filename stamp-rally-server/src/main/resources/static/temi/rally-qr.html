@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1200" />
+    <title>스탬프 랠리 — 폰 연결</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  </head>
+  <body>
+    <div class="stage">
+      <header class="top-bar">
+        <div>
+          <h1>스탬프 랠리 — 휴대폰 연결</h1>
+          <p class="muted">QR을 스캔해 참가하고 스탬프를 모으세요.</p>
+        </div>
+        <a class="back-link" href="index.html">← 메인</a>
+      </header>
+      <div class="screen-body" style="align-items: center; justify-content: center; gap: 40px">
+        <div class="qr-host"><div id="qr"></div></div>
+        <div class="hint" style="max-width: 720px; text-align: center; font-size: 1.25rem">
+          스탬프 코드 <strong>RALLY-1</strong> ~ <strong>RALLY-4</strong>는 구역에 붙인 QR(또는 아래
+          <a href="stamp-codes.html" style="color: var(--accent-4)">스탬프 QR 모음</a>)으로 적립할 수 있습니다.
+        </div>
+        <a class="back-link" href="stamp-codes.html">스탬프별 QR 인쇄용 화면 →</a>
+      </div>
+    </div>
+    <script>
+      window.addEventListener("load", function () {
+        var host = document.getElementById("qr");
+        host.innerHTML = "";
+        var url = location.origin + "/mobile/index.html";
+        if (window.QRCode) {
+          new QRCode(host, { text: url, width: 360, height: 360 });
+        }
+      });
+    </script>
+  </body>
+</html>

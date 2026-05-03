@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" class="pb-doc">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta name="viewport" content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>사진 촬영 안내</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="photo-booth.css" />
+  </head>
+  <body>
+    <div class="pb-frame" role="application">
+      <div class="pb-bg-record" aria-hidden="true"></div>
+      <div class="pb-actions-row">
+        <button type="button" class="pb-btn-asset pb-btn-asset--go" id="btnGo" aria-label="촬영할래요"></button>
+        <button type="button" class="pb-btn-asset pb-btn-asset--cancel" id="btnCancel" aria-label="괜찮아요"></button>
+      </div>
+    </div>
+    <script>
+      document.getElementById("btnGo").addEventListener("click", function () {
+        location.href = "photo-capture.html";
+      });
+      document.getElementById("btnCancel").addEventListener("click", function () {
+        location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>
