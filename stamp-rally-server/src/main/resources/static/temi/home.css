@@ -1,0 +1,225 @@
+/*
+ * 테미 홈(index.html) 전용 — style.css와 분리
+ * 브라우저가 style.css만 오래 캐시해도 홈은 이 파일을 새로 받습니다.
+ */
+
+html.temi-home-doc {
+  width: 1920px;
+  min-width: 1920px;
+  max-width: 1920px;
+  min-height: 1200px;
+  height: 1200px;
+  max-height: 1200px;
+  margin: 0 auto;
+  overflow: auto;
+  box-sizing: border-box;
+  background-color: #b8e4ff !important;
+  background-image: url("/asset/home-bg.png") !important;
+  background-position: top center !important;
+  background-size: 1920px 1200px !important;
+  background-repeat: no-repeat !important;
+}
+
+html.temi-home-doc body {
+  width: 1920px;
+  min-width: 1920px;
+  max-width: 1920px;
+  min-height: 1200px;
+  height: 1200px;
+  max-height: 1200px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent !important;
+  box-sizing: border-box;
+}
+
+body.temi-home .stage {
+  width: 1920px;
+  height: 1200px;
+  max-width: 1920px;
+  max-height: 1200px;
+  margin: 0;
+  background: transparent;
+  box-sizing: border-box;
+  /* 하단은 음성 도크가 stage 안에서 차지 — style.css의 큰 bottom 패딩 제거 */
+  padding: 72px 96px 20px;
+  min-height: 0;
+  gap: 20px;
+}
+
+body.temi-home .top-bar h1 {
+  font-family: "Pinkfong Baby Shark", "Noto Sans KR", system-ui, sans-serif;
+  font-size: 150px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: #000000;
+  text-align: center;
+  text-shadow: none;
+}
+
+/*
+ * flex:1이면 헤더~음성 사이 전체 높이를 screen-body가 먹고,
+ * 그 안에서 버튼만 세로 가운데라서 아래에 빈 하늘이 길게 생김 → 높이는 버튼만 쓰기
+ */
+body.temi-home .screen-body {
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  /* 제목 아래 버튼·음성 블록을 한꺼번에 Y축으로 내림 */
+  margin-top: 100px;
+}
+
+body.temi-home .button-grid {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+  grid-template-columns: repeat(4, 397px);
+  grid-auto-rows: 550px;
+  justify-content: center;
+  align-content: center;
+  column-gap: 36px;
+  row-gap: 36px;
+  /* 네 버튼만 Y축으로 살짝 올림 (음성 버튼 위치는 그대로) */
+  transform: translateY(-15px);
+}
+
+body.temi-home .button-grid .main-btn {
+  width: 397px;
+  height: 550px;
+  max-width: 397px;
+  max-height: 550px;
+  min-height: 550px;
+  padding: 0;
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: transparent;
+  /* 에셋 397×550과 동일: cover 대신 꽉 채워 잘림 방지 */
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--nav {
+  background: url("/asset/btn-guide.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--stamp {
+  background: url("/asset/btn-rally.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--photo {
+  background: url("/asset/btn-photo.png") center center / 100% 100% no-repeat;
+}
+
+body.temi-home .button-grid .main-btn.main-btn--event {
+  background: url("/asset/btn-event.png") center center / 100% 100% no-repeat;
+}
+
+/* fixed가 아니라 stage 플렉스 흐름으로 1920×1200 프레임 안에 포함 */
+body.temi-home .voice-dock {
+  position: static;
+  left: auto;
+  right: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 0 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.35));
+}
+
+body.temi-home .voice-btn {
+  min-width: 360px;
+  min-height: 80px;
+  font-size: 1.25rem;
+  border-color: rgba(30, 111, 184, 0.45);
+  background: #1e6fb8;
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+}
+
+html.temi-home-doc body.temi-home .top-bar.top-bar--centered {
+  width: 100%;
+  justify-content: center;
+}
+
+html.temi-home-doc body.temi-home .top-bar__brand {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  margin-top: 64px;
+}
+
+html.temi-home-doc body.temi-home .top-bar h1 {
+  font-family: "Pinkfong Baby Shark", "Noto Sans KR", system-ui, sans-serif !important;
+  font-size: 150px !important;
+  font-weight: 700 !important;
+  line-height: 1.05 !important;
+  color: #000000 !important;
+  text-align: center !important;
+  text-shadow: none !important;
+}
+
+html.temi-home-doc body.temi-home .screen-body {
+  flex: 0 0 auto !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin-top: 100px !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid {
+  flex: 0 0 auto !important;
+  grid-auto-rows: 550px !important;
+  transform: translateY(-15px) !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn {
+  width: 397px !important;
+  height: 550px !important;
+  max-width: 397px !important;
+  max-height: 550px !important;
+  min-height: 550px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 20px !important;
+  flex-shrink: 0 !important;
+  background-size: 100% 100% !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--nav {
+  background: url("/asset/btn-guide.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--stamp {
+  background: url("/asset/btn-rally.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--photo {
+  background: url("/asset/btn-photo.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .button-grid .main-btn.main-btn--event {
+  background: url("/asset/btn-event.png") center center / 100% 100% no-repeat !important;
+}
+
+html.temi-home-doc body.temi-home .stage {
+  padding: 72px 96px 20px !important;
+  gap: 20px !important;
+}
+
+html.temi-home-doc body.temi-home .voice-dock {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}

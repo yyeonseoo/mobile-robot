@@ -1,0 +1,328 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700&display=swap");
+
+/* 루트 절대 경로 + 공백 없는 파일명: 상대경로/공백 URL 이슈 방지 */
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/temi/fonts/pinkfong-light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/temi/fonts/pinkfong-regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/temi/fonts/pinkfong-bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg-deep: #0e1419;
+  --bg-panel: #161d26;
+  --accent-1: #2dd4bf;
+  --accent-2: #f59e0b;
+  --accent-3: #a78bfa;
+  --accent-4: #38bdf8;
+  --text: #e8eef4;
+  --text-muted: #8b9cb0;
+  --radius: 20px;
+  --shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  /* 테미 기준 해상도 고정 — 더 작은 창에서는 스크롤 */
+  min-width: 1920px;
+  min-height: 1200px;
+  font-family: "Noto Sans KR", system-ui, sans-serif;
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, #1a2836 0%, var(--bg-deep) 55%);
+  color: var(--text);
+}
+
+body {
+  display: block;
+  overflow: auto;
+}
+
+/* 테미 홈 전용 스타일은 ../home.css (index.html에서 로드) */
+
+.stage {
+  width: 1920px;
+  height: 1200px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 72px 96px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.top-bar--centered {
+  justify-content: center;
+  text-align: center;
+}
+
+.top-bar__brand {
+  max-width: 100%;
+}
+
+.top-bar h1 {
+  margin: 0;
+  font-size: 2.4rem;
+}
+
+.top-bar .muted {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.back-link {
+  color: var(--accent-4);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.screen-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.button-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 36px;
+  align-content: center;
+}
+
+.main-btn {
+  position: relative;
+  border: none;
+  border-radius: var(--radius);
+  padding: 40px 28px;
+  min-height: 320px;
+  font-family: inherit;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.35;
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-btn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.main-btn:hover:not(:disabled) {
+  transform: translateY(-6px);
+  filter: brightness(1.06);
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+}
+
+.main-btn:active:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.main-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.main-btn__label {
+  display: block;
+  max-width: 100%;
+}
+
+.main-btn--nav {
+  background: linear-gradient(145deg, #134e4a 0%, #0d3d3a 40%, #0a2f2c 100%);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+.main-btn--stamp {
+  background: linear-gradient(145deg, #78350f 0%, #5c2d0e 45%, #422006 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.main-btn--photo {
+  background: linear-gradient(145deg, #0f3a5c 0%, #0c2f4d 45%, #082440 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.main-btn--event {
+  background: linear-gradient(145deg, #4c1d95 0%, #3b176f 45%, #2e1255 100%);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+
+.voice-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px 96px 28px;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(180deg, transparent, rgba(14, 20, 25, 0.92));
+}
+
+.voice-btn {
+  min-width: 420px;
+  min-height: 96px;
+  border-radius: 999px;
+  border: 2px solid rgba(45, 212, 191, 0.5);
+  background: #134e4a;
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.voice-btn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+
+.zone-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+
+.zone-card {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  text-align: left;
+  border: 1px solid #2a3544;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.zone-card:hover {
+  border-color: rgba(45, 212, 191, 0.45);
+}
+
+.zone-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+}
+
+.zone-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.qr-panel {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 28px 36px;
+  border: 1px solid #2a3544;
+}
+
+.qr-panel .qr-host {
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.qr-panel .hint {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 36px;
+  flex: 1;
+  min-height: 0;
+}
+
+.detail-main {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 36px;
+  border: 1px solid #2a3544;
+  overflow: auto;
+}
+
+.detail-main h2 {
+  margin: 0 0 16px;
+  font-size: 2rem;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.detail-body {
+  font-size: 1.15rem;
+  line-height: 1.65;
+  color: #cbd5e1;
+}

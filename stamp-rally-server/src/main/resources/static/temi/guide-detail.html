@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1200" />
+    <title>전시 상세</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  </head>
+  <body>
+    <div class="stage">
+      <header class="top-bar">
+        <a class="back-link" href="guide.html">← 목록</a>
+        <a class="back-link" href="index.html">메인</a>
+      </header>
+      <div class="detail-grid" style="flex: 1; min-height: 0">
+        <section class="detail-main" id="detailMain">
+          <p class="muted">불러오는 중…</p>
+        </section>
+        <aside class="qr-panel" style="flex-direction: column; align-items: flex-start">
+          <strong style="font-size: 1.2rem">폰으로 경로·상세 넘기기</strong>
+          <div class="qr-host" style="margin-top: 12px"><div id="qrSync"></div></div>
+          <p class="hint" style="margin-top: 16px">
+            모바일에서 같은 전시 상세 페이지가 열립니다. 길안내는 폰에서 이어서 확인하세요.
+          </p>
+          <button type="button" class="voice-btn" style="min-width: 100%; margin-top: 20px" id="btnVoice">
+            음성 안내 시작 (데모)
+          </button>
+        </aside>
+      </div>
+    </div>
+    <script>
+      function origin() {
+        return location.origin;
+      }
+      function qs(name) {
+        var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
+        return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+      }
+      var id = qs("id");
+      fetch(origin() + "/api/exhibitions/" + encodeURIComponent(id))
+        .then(function (r) {
+          if (!r.ok) throw new Error("not found");
+          return r.json();
+        })
+        .then(function (ex) {
+          var el = document.getElementById("detailMain");
+          el.innerHTML =
+            "<h2>" +
+            ex.name +
+            "</h2>" +
+            '<div class="detail-meta"><span>위치: ' +
+            ex.locationText +
+            "</span><span>구역: " +
+            ex.zone +
+            "</span><span>예상 이동: 약 " +
+            ex.estimatedMinutes +
+            '분</span><span>방향: ' +
+            ex.directionHint +
+            "</span></div>" +
+            '<p class="detail-body">' +
+            ex.description +
+            "</p>" +
+            (ex.relatedEvent
+              ? '<p class="detail-body" style="margin-top:16px"><strong>관련 이벤트:</strong> ' +
+                ex.relatedEvent +
+                "</p>"
+              : "");
+          document.title = ex.name + " — 상세";
+          var host = document.getElementById("qrSync");
+          host.innerHTML = "";
+          if (window.QRCode) {
+            new QRCode(host, {
+              text: origin() + "/mobile/guide.html?id=" + ex.id,
+              width: 220,
+              height: 220,
+            });
+          }
+        })
+        .catch(function () {
+          document.getElementById("detailMain").innerHTML =
+            "<p>전시 정보를 찾을 수 없습니다.</p>";
+        });
+      document.getElementById("btnVoice").onclick = function () {
+        if (!window.speechSynthesis) return;
+        var el = document.getElementById("detailMain");
+        var u = new SpeechSynthesisUtterance(el.innerText || "");
+        u.lang = "ko-KR";
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      };
+    </script>
+  </body>
+</html>
