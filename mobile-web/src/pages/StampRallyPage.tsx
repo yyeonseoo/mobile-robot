@@ -123,19 +123,20 @@ export default function StampRallyPage() {
 
   return (
     <div className="bg-background font-body-md text-on-background min-h-screen pb-32">
-      <header className="sticky top-0 z-40 bg-yellow-400 dark:bg-yellow-600 shadow-xl border-b-4 border-yellow-600/30 px-6 py-4 flex justify-between items-center w-full">
-        <div className="flex items-center gap-3 active:translate-y-0.5 transition-transform">
-          <Link to="/" className="material-symbols-outlined text-slate-900" aria-label="홈으로">
-            arrow_back
+      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
+            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
           </Link>
-          <h1 className="tracking-tight text-slate-900 font-headline-md">POKÉGUIDE</h1>
+          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
+            POKÉGUIDE
+          </h1>
         </div>
-        <span
-          className="material-symbols-outlined text-2xl font-black italic text-slate-900 tracking-tighter"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          capture
-        </span>
+        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            capture
+          </span>
+        </div>
       </header>
 
       <main className="px-margin pt-sm space-y-gutter">
