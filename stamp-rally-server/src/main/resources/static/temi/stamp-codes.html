@@ -56,7 +56,7 @@
           cell.appendChild(tag);
           cell.appendChild(host);
           g.appendChild(cell);
-          var url = location.origin + "/mobile/rally.html?claim=" + encodeURIComponent(code);
+          var url = location.origin + "/mobile/app/rally?claim=" + encodeURIComponent(code);
           if (window.QRCode) {
             new QRCode(host, { text: url, width: 200, height: 200 });
           }
