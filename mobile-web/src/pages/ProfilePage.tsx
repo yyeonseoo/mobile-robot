@@ -1,6 +1,7 @@
 import BottomNav from '../components/BottomNav'
 import { clearNickname, clearVisitorToken, getNickname, getVisitorToken } from '../lib/storage'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function ProfilePage() {
   const [token, setToken] = useState(() => getVisitorToken())
@@ -16,14 +17,20 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
-      <header className="bg-yellow-400 dark:bg-yellow-600 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl">
+      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-3xl text-slate-900 dark:text-white">menu</span>
-          <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
-            INFO
+          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
+            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
+          </Link>
+          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
+            POKÉGUIDE
           </h1>
         </div>
-        <span className="material-symbols-outlined text-3xl text-slate-900 dark:text-white">person</span>
+        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            capture
+          </span>
+        </div>
       </header>
 
       <main className="pt-24 px-gutter max-w-2xl mx-auto space-y-gutter">
