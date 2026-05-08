@@ -29,7 +29,7 @@
       window.addEventListener("load", function () {
         var host = document.getElementById("qr");
         host.innerHTML = "";
-        var url = location.origin + "/mobile/index.html";
+        var url = location.origin + "/mobile/app/enter?next=rally";
         if (window.QRCode) {
           new QRCode(host, { text: url, width: 360, height: 360 });
         }
