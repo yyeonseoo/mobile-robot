@@ -1,0 +1,25 @@
+### Cursor / VSCode / JetBrains
+.cursor/
+.vscode/
+.idea/
+*.iml
+
+### Cursor agent artifacts (local only)
+agent-tools/
+agent-transcripts/
+terminals/
+
+### OS
+.DS_Store
+
+### Node / build outputs
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.log
+logs/
+
+### Java / Maven
+**/target/
+
