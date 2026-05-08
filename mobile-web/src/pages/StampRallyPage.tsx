@@ -1,0 +1,341 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import BottomNav from '../components/BottomNav'
+import { authHeaders, jsonFetch } from '../lib/api'
+
+type RallyMeta = { eventTitle: string }
+type RallyStatus = { collectedCount: number; totalSpots: number; completed: boolean }
+type MyStamp = { spotName: string; spotCode: string }
+type ClaimResponse = {
+  spotName?: string
+  newlyCollected?: boolean
+  alreadyHad?: boolean
+  rallyComplete?: boolean
+}
+
+export default function StampRallyPage() {
+  const nav = useNavigate()
+  const [params] = useSearchParams()
+  const claimParam = useMemo(() => (params.get('claim') || '').trim(), [params])
+
+  const [eventTitle, setEventTitle] = useState('스탬프 진행도')
+  const [statusText, setStatusText] = useState('—')
+  const [pct, setPct] = useState(0)
+  const [completed, setCompleted] = useState(false)
+
+  const [claimInput, setClaimInput] = useState('')
+  const [claimMsg, setClaimMsg] = useState('')
+  const [gpsMsg, setGpsMsg] = useState('')
+  const [stamps, setStamps] = useState<MyStamp[]>([])
+
+  async function refreshMetaAndStatus() {
+    const meta = await jsonFetch<RallyMeta>('/api/rally/meta')
+    setEventTitle(meta.eventTitle || '스탬프 진행도')
+    const st = await jsonFetch<RallyStatus>('/api/rally/status', { headers: authHeaders() })
+    const p = st.totalSpots > 0 ? Math.round((st.collectedCount * 100) / st.totalSpots) : 0
+    setPct(p)
+    setStatusText(`${st.collectedCount} / ${st.totalSpots} 수집`)
+    setCompleted(!!st.completed)
+  }
+
+  async function refreshList() {
+    const items = await jsonFetch<MyStamp[]>('/api/my-stamps', { headers: authHeaders() })
+    setStamps(items || [])
+  }
+
+  async function tryClaim(code: string, silent: boolean) {
+    try {
+      const data = await jsonFetch<ClaimResponse>('/api/stamps/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ qrValue: code }),
+      })
+      const msg = data.newlyCollected
+        ? `새 스탬프를 받았습니다: ${data.spotName || ''}`
+        : data.alreadyHad
+          ? `이미 받은 스탬프입니다: ${data.spotName || ''}`
+          : ''
+      if (!silent) setClaimMsg(msg)
+      await refreshMetaAndStatus()
+      await refreshList()
+      if (data.rallyComplete) setCompleted(true)
+    } catch (e) {
+      if (!silent) setClaimMsg(e instanceof Error ? e.message : '적립 실패')
+    }
+  }
+
+  async function gpsClaim() {
+    setGpsMsg('')
+    if (!navigator.geolocation) {
+      setGpsMsg('이 브라우저는 위치를 지원하지 않습니다.')
+      return
+    }
+    setGpsMsg('위치 확인 중…')
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const data = await jsonFetch<{ newlyCollected: unknown[] }>('/api/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            }),
+          })
+          const n = (data?.newlyCollected || []).length
+          setGpsMsg(n > 0 ? `근처에서 ${n}개 획득!` : '이번에는 새 스탬프가 없습니다.')
+          await refreshMetaAndStatus()
+          await refreshList()
+        } catch (e) {
+          setGpsMsg(e instanceof Error ? e.message : '전송 실패')
+        }
+      },
+      () => setGpsMsg('위치 권한을 허용해 주세요.'),
+      { enableHighAccuracy: true, timeout: 15000 }
+    )
+  }
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        await refreshMetaAndStatus()
+        await refreshList()
+
+        if (claimParam) {
+          setClaimInput(claimParam)
+          await tryClaim(claimParam, true)
+          nav('/rally', { replace: true })
+          return
+        }
+
+        const pending = sessionStorage.getItem('pendingClaim')
+        if (pending) {
+          sessionStorage.removeItem('pendingClaim')
+          setClaimInput(pending)
+          await tryClaim(pending, true)
+        }
+      } catch {
+        // keep UI, errors shown on actions
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div className="bg-background font-body-md text-on-background min-h-screen pb-32">
+      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
+            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
+          </Link>
+          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
+            POKÉGUIDE
+          </h1>
+        </div>
+        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            capture
+          </span>
+        </div>
+      </header>
+
+      <main className="px-margin pt-sm space-y-gutter">
+        <section className="text-center space-y-xs pt-base">
+          <h2 className="font-display-lg text-display-lg text-primary">모두 모아보자!</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant px-md">
+            포켓몬 센터를 방문하고 디지털 스탬프 북을 채워보세요!
+          </p>
+        </section>
+
+        <section className="bg-surface-container-lowest rounded-lg p-md neumorphic-shadow border-4 border-surface-variant relative overflow-hidden">
+          <div className="flex justify-between items-center mb-base">
+            <span className="font-label-bold text-label-bold text-tertiary">스탬프 진행도</span>
+            <span className="font-label-bold text-label-bold text-on-surface">{statusText}</span>
+          </div>
+          <div className="relative h-12 bg-surface-container rounded-full p-1 border-2 border-outline-variant pokeball-path">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-outline-variant -translate-y-1/2" />
+            <div
+              className="absolute top-0 left-0 h-full bg-secondary-container rounded-full flex items-center justify-end pr-1 shadow-inner"
+              style={{ width: `${pct}%` }}
+            >
+              <div className="w-8 h-8 bg-white rounded-full border-2 border-on-secondary-fixed flex items-center justify-center">
+                <span
+                  className="material-symbols-outlined text-secondary text-sm"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  capture
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {completed ? (
+          <section className="bg-primary-container rounded-lg p-md border-4 border-white neumorphic-shadow">
+            <div className="font-headline-md text-headline-md text-on-primary-fixed">랠리 완료!</div>
+            <div className="text-on-primary-fixed-variant mt-xs">
+              안내 데스크에서 기념 스티커를 받아가세요. (데모 문구)
+            </div>
+          </section>
+        ) : null}
+
+        <section className="rounded-lg overflow-hidden neumorphic-shadow border-4 border-white aspect-square relative bg-tertiary-container">
+          <img
+            className="w-full h-full object-cover"
+            alt="스탬프 지도"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMQCYuZ_t12QmFSHtARE1xYerOrgtRt4DzPMNTX-xsQsxS8fiL2vQw5Rc-z-IDMXGSmDD7QUmsWSWH3mxRw9tKqb0jfZtAOTkyKO8NK8PopKe6Ojmb_hmL5hW7JXQW9qHOUdQybV2OiTCtwVYNj3TIghr8qeSb3uqH3Q-yNW1ye-Wpwzj_md0_oh4A-_7MpBnhx8z6AQPG9kyaSw9e6vJovWn7f-BsWH0aHxywJFp7ov06MF0x-Wn5vztSnI-cNYUYnmWN-HPYKgM"
+          />
+
+          <div className="absolute top-1/4 left-1/3 group">
+            <div className="bg-white p-1 rounded-full border-4 border-secondary-container shadow-lg scale-110 active:scale-90 transition-transform">
+              <span
+                className="material-symbols-outlined text-secondary"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                home_pin
+              </span>
+            </div>
+          </div>
+          <div className="absolute bottom-1/3 right-1/4">
+            <div className="bg-white p-1 rounded-full border-4 border-tertiary shadow-lg opacity-80">
+              <span className="material-symbols-outlined text-tertiary">location_on</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-sm">
+          <div className="flex items-end justify-between gap-4">
+            <h3 className="font-headline-md text-headline-md text-on-surface">{eventTitle}</h3>
+            <button
+              type="button"
+              onClick={() => {
+                refreshMetaAndStatus().catch(() => {})
+                refreshList().catch(() => {})
+              }}
+              className="text-sm font-bold text-tertiary"
+            >
+              새로고침
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-gutter">
+            <div className="stamp-card rounded-lg bg-white p-sm flex flex-col items-center gap-base">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border-2 border-dashed border-green-400">
+                <img
+                  className="w-12 h-12 object-contain"
+                  alt="Forest badge"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcbXrCvjcHpIToajNXU7jUyAgr0BV7tO3RvcEClAnv99hrM-BCOvGREMCeWca-lb3qIP22q8w_LrVmsOD0lhQFu3XCZy551pQRP7gK_W_UnO8_WO5GP7gisUtzPr8WSw59guRVfl_kQSaak0Mx3gkBw2uRzjzxjCEZm6dIoKweXxbdmJZvS6U7uE1wp8nuwZ3mzFKKzy2ejOk7Zv_MuS0gn2_wGdc-RvKCFd7PZKztq9zSyCmGzr16XgSb6cAHvehmrzJj2I6gFhc"
+                />
+              </div>
+              <span className="font-label-bold text-label-bold text-green-700">포레스트</span>
+            </div>
+
+            <div className="stamp-card rounded-lg bg-white p-sm flex flex-col items-center gap-base">
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center border-2 border-dashed border-orange-400">
+                <img
+                  className="w-12 h-12 object-contain"
+                  alt="Flame badge"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl0jlt-CK9juzziboRZYpQO4DVn4KGew4WkWipeB3EzplRml9OS5iztzaDXl3kIUMfPItnEtlDNU8AhKaovfwxL9RB74U4l-eKD92Pcy5INAHqp5UirawZpOZh5HNZELNC-d9q0uOD8tgls7zE-kjnflO6udQ17P0fozo8QUwNJeGk4JmeC8ipPz7VN-1rp56dEZf1P1kmO004dSVLTbB8aFluJVLXpi5lFDpE7-AcSWSQolpnh560OAftxrPWQUj4c7GIKOsYc-Q"
+                />
+              </div>
+              <span className="font-label-bold text-label-bold text-orange-700">플레임</span>
+            </div>
+
+            <div className="stamp-card rounded-lg bg-white p-sm flex flex-col items-center gap-base">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center border-2 border-dashed border-blue-400">
+                <img
+                  className="w-12 h-12 object-contain"
+                  alt="Ocean badge"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBH29JrM9u-dMHwaISZvZCOTz0HayAaxiUB_Q3Ou-YwlsynwfcAL_Q_nCO_xNI48wvoBgsbtmI_Lg1p1yed3mKI93MyC7xTvSr6R1dhYV14YtPf9ikxv6th6nFHgUENtjaBG4NlfzUc9R0KOL5NFvXRX0kgy7N4t6Ick41W0AR-Be-EgZoFvtl-4vKwFe2ly4h9JyW0SrxDTq1EhDVK7SS05Nikh_q8QHAYxoVuXbXvgIaNwUGL-QUWBsg-tATZ9yaDiptHGOvPBgM"
+                />
+              </div>
+              <span className="font-label-bold text-label-bold text-tertiary">오션</span>
+            </div>
+
+            <div className="stamp-card rounded-lg bg-surface-container-low p-sm flex flex-col items-center gap-base grayscale opacity-50">
+              <div className="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center border-2 border-dashed border-outline">
+                <span className="material-symbols-outlined text-4xl text-outline">lock</span>
+              </div>
+              <span className="font-label-bold text-label-bold text-outline">잠김</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
+          <label className="font-label-bold text-on-surface" htmlFor="qrInput">
+            스탬프 코드 입력 (또는 QR로 이 페이지 열기)
+          </label>
+          <input
+            id="qrInput"
+            value={claimInput}
+            onChange={(e) => setClaimInput(e.target.value)}
+            placeholder="예: RALLY-1"
+            autoComplete="off"
+            className="w-full rounded-lg border-2 border-surface-variant bg-white px-4 py-3"
+          />
+          <button
+            type="button"
+            className="w-full bg-primary-container text-on-primary-fixed rounded-lg py-3 font-bold toy-button-shadow-light"
+            onClick={() => {
+              const v = claimInput.trim()
+              if (!v) {
+                setClaimMsg('코드를 입력하세요.')
+                return
+              }
+              tryClaim(v, false).catch(() => {})
+            }}
+          >
+            스탬프 받기
+          </button>
+          {claimMsg ? <p className="text-on-surface-variant text-sm">{claimMsg}</p> : null}
+        </section>
+
+        <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
+          <button
+            type="button"
+            className="w-full bg-surface-container-low text-on-surface rounded-lg py-3 font-bold toy-button-shadow-light"
+            onClick={gpsClaim}
+          >
+            GPS로 근처 스탬프 받기 (선택)
+          </button>
+          {gpsMsg ? <p className="text-on-surface-variant text-sm">{gpsMsg}</p> : null}
+        </section>
+
+        <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
+          <h4 className="font-headline-md text-body-lg text-on-surface">내 스탬프</h4>
+          <ul className="space-y-xs">
+            {stamps.length ? (
+              stamps.map((s) => (
+                <li key={`${s.spotCode}-${s.spotName}`} className="flex justify-between border-b border-surface-variant py-2">
+                  <span className="font-bold">{s.spotName}</span>
+                  <span className="text-on-surface-variant text-sm">{s.spotCode}</span>
+                </li>
+              ))
+            ) : (
+              <li className="text-on-surface-variant text-sm">아직 없음</li>
+            )}
+          </ul>
+        </section>
+
+        <section className="flex flex-col items-center pt-md">
+          <button className="relative flex flex-col items-center group active:scale-95 transition-transform duration-100">
+            <div
+              className="w-24 h-24 rounded-full border-4 border-slate-900 overflow-hidden shadow-[0_8px_0_0_rgba(0,0,0,1)] flex flex-col relative"
+              style={{ background: 'linear-gradient(to bottom, #e90d11 50%, #ffffff 50%)' }}
+            >
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-900 -translate-y-1/2" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-4 border-slate-900 bg-white flex items-center justify-center z-10">
+                <div className="w-3 h-3 rounded-full border-2 border-slate-900" />
+              </div>
+            </div>
+            <span className="mt-base block font-display-lg text-headline-md text-secondary uppercase tracking-widest text-center">
+              QR 스캔하기
+            </span>
+          </button>
+        </section>
+      </main>
+
+      <BottomNav />
+    </div>
+  )
+}
+
