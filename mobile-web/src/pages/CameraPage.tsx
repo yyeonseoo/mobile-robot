@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import BottomNav from '../components/BottomNav'
 
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -157,7 +158,7 @@ export default function CameraPage() {
   }, [])
 
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden pb-[140px]">
+    <div className="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden pb-32">
       <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-4">
           <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
@@ -177,7 +178,7 @@ export default function CameraPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-margin py-lg pb-[140px]">
+      <main className="max-w-4xl mx-auto px-margin py-lg pb-xl">
         <div className="text-center mb-lg">
           <h2 className="font-display-lg text-display-lg text-primary mb-xs">인생네컷 찍기!</h2>
           <p className="text-on-surface-variant font-body-lg">
@@ -377,41 +378,7 @@ export default function CameraPage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50">
-        <div className="bg-white dark:bg-slate-900 rounded-full border-4 border-slate-900 dark:border-white shadow-[0_8px_0_0_rgba(0,0,0,1)] flex justify-around items-center px-6 py-2">
-          <Link
-            to="/map"
-            className="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:scale-110 transition-transform duration-200"
-          >
-            <span className="material-symbols-outlined text-[28px]">map</span>
-            <span className="text-[10px] font-label-bold uppercase tracking-tighter">지도</span>
-          </Link>
-          <button
-            type="button"
-            className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-16 h-16 shadow-lg ring-4 ring-slate-900 hover:scale-110 transition-transform duration-200 -translate-y-4"
-            aria-current="page"
-          >
-            <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              capture
-            </span>
-            <span className="text-[10px] font-label-bold uppercase tracking-tighter">촬영</span>
-          </button>
-          <Link
-            to="/scan"
-            className="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:scale-110 transition-transform duration-200"
-          >
-            <span className="material-symbols-outlined text-[28px]">qr_code_scanner</span>
-            <span className="text-[10px] font-label-bold uppercase tracking-tighter">스캔</span>
-          </Link>
-          <Link
-            to="/profile"
-            className="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:scale-110 transition-transform duration-200"
-          >
-            <span className="material-symbols-outlined text-[28px]">person</span>
-            <span className="text-[10px] font-label-bold uppercase tracking-tighter">내정보</span>
-          </Link>
-        </div>
-      </nav>
+      <BottomNav />
     </div>
   )
 }

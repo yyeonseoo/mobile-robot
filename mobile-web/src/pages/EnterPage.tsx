@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { jsonFetch } from '../lib/api'
+import { pathFromNextKey } from '../lib/sessionRoutes'
 import { getNickname, getVisitorToken, setNickname, setVisitorToken } from '../lib/storage'
 import BottomNav from '../components/BottomNav'
 
@@ -17,6 +18,12 @@ export default function EnterPage() {
   const [busy, setBusy] = useState(false)
   const next = useMemo(() => params.get('next') || '', [params])
 
+  useEffect(() => {
+    if (!getVisitorToken()) return
+    const dest = pathFromNextKey(next) || '/'
+    navigate(dest, { replace: true })
+  }, [next, navigate])
+
   async function createSession() {
     const nick = (nickname || '').trim()
     setBusy(true)
@@ -30,8 +37,8 @@ export default function EnterPage() {
       setNickname(data.nickname ? String(data.nickname) : '')
       setStatusLine(`세션: 연결됨${data.nickname ? ` (${data.nickname})` : ''}`)
 
-      if (next === 'rally') navigate('/rally', { replace: true })
-      else navigate('/', { replace: true })
+      const dest = pathFromNextKey(next) || '/'
+      navigate(dest, { replace: true })
     } catch (e) {
       alert(e instanceof Error ? e.message : '세션 발급 실패')
     } finally {
@@ -42,12 +49,9 @@ export default function EnterPage() {
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
       <header className="bg-yellow-400 dark:bg-yellow-600 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-3xl text-slate-900 dark:text-white">menu</span>
-          <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
-            POKÉGUIDE
-          </h1>
-        </div>
+        <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
+          POKÉGUIDE
+        </h1>
         <span
           className="material-symbols-outlined text-3xl text-slate-900 dark:text-white"
           style={{ fontVariationSettings: "'FILL' 1" }}
