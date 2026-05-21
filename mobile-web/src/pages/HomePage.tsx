@@ -1,18 +1,108 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
+import { authHeaders, jsonFetch } from '../lib/api'
+import { getVisitorToken } from '../lib/storage'
+
+type RallyMeta = { totalSpots: number; eventTitle: string }
+type RallyStatus = { collectedCount: number; totalSpots: number; completed: boolean }
+type MyStamp = { spotName: string; spotCode: string; collectedAt?: string }
+type StampSpot = { code: string; name: string }
 
 export default function HomePage() {
+  const [hasSession, setHasSession] = useState(false)
+  const [collectedCount, setCollectedCount] = useState(0)
+  const [totalSpots, setTotalSpots] = useState(0)
+  const [completed, setCompleted] = useState(false)
+  const [stamps, setStamps] = useState<MyStamp[]>([])
+  const [allSpots, setAllSpots] = useState<StampSpot[]>([])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const meta = await jsonFetch<RallyMeta>('/api/rally/meta')
+        setTotalSpots(meta.totalSpots ?? 0)
+
+        const token = getVisitorToken()
+        setHasSession(!!token)
+        if (!token) {
+          setCollectedCount(0)
+          setStamps([])
+          setCompleted(false)
+          return
+        }
+
+        const st = await jsonFetch<RallyStatus>('/api/rally/status', { headers: authHeaders() })
+        setCollectedCount(st.collectedCount)
+        setTotalSpots(st.totalSpots)
+        setCompleted(st.completed)
+
+        const items = await jsonFetch<MyStamp[]>('/api/my-stamps', { headers: authHeaders() })
+        setStamps(items || [])
+
+        if (st.collectedCount < st.totalSpots) {
+          const spots = await jsonFetch<StampSpot[]>('/api/spots')
+          setAllSpots(spots || [])
+        }
+      } catch {
+        // UI defaults
+      }
+    })()
+  }, [])
+
+  const pct = useMemo(
+    () => (totalSpots > 0 ? Math.round((collectedCount * 100) / totalSpots) : 0),
+    [collectedCount, totalSpots]
+  )
+
+  const badgeText = `${collectedCount}/${totalSpots} 발견함`
+
+  const featured = useMemo(() => {
+    if (!hasSession) {
+      return {
+        title: '스탬프 랠리 시작하기',
+        subtitle: '입장 후 스탬프를 모아 보세요',
+        checked: false,
+      }
+    }
+    if (completed) {
+      const last = stamps[stamps.length - 1]
+      return {
+        title: last?.spotName ?? '랠리 완료!',
+        subtitle: '모든 스탬프를 모았어요',
+        checked: true,
+      }
+    }
+    if (stamps.length > 0) {
+      const last = stamps[stamps.length - 1]
+      return {
+        title: last.spotName,
+        subtitle: `스탬프: ${last.spotCode}`,
+        checked: true,
+      }
+    }
+    const collectedCodes = new Set(stamps.map((s) => s.spotCode))
+    const next = allSpots.find((s) => !collectedCodes.has(s.code))
+    if (next) {
+      return {
+        title: next.name,
+        subtitle: `다음 목표 · ${next.code}`,
+        checked: false,
+      }
+    }
+    return {
+      title: '스탬프를 모아 보세요',
+      subtitle: '스탬프 랠리에서 QR 스캔하기',
+      checked: false,
+    }
+  }, [hasSession, completed, stamps, allSpots])
+
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
       <header className="bg-yellow-400 dark:bg-yellow-600 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl">
-        <div className="flex items-center gap-4">
-          <button className="active:translate-y-0.5 transition-transform hover:opacity-80 transition-opacity text-slate-900 dark:text-white">
-            <span className="material-symbols-outlined text-3xl">menu</span>
-          </button>
-          <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
-            POKÉGUIDE
-          </h1>
-        </div>
+        <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
+          POKÉGUIDE
+        </h1>
         <div className="flex items-center gap-4">
           <span
             className="material-symbols-outlined text-3xl text-slate-900 dark:text-white"
@@ -95,17 +185,20 @@ export default function HomePage() {
           </button>
         </section>
 
-        <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-md">
+        <Link
+          to={hasSession ? '/rally' : '/enter?next=rally'}
+          className="block bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-md hover:opacity-95 transition-opacity"
+        >
           <div className="flex justify-between items-center">
             <h3 className="font-headline-md text-headline-md text-on-surface">오늘의 수집</h3>
             <span className="bg-tertiary-container text-on-tertiary-container px-sm py-xs rounded-full font-label-bold text-xs uppercase">
-              3/5 발견함
+              {badgeText}
             </span>
           </div>
 
           <div className="flex justify-between items-center bg-surface-container-low p-sm rounded-xl">
-            <div className="flex items-center gap-sm">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-surface-variant">
+            <div className="flex items-center gap-sm min-w-0">
+              <div className="w-12 h-12 shrink-0 bg-white rounded-full flex items-center justify-center border-2 border-surface-variant">
                 <span
                   className="material-symbols-outlined text-tertiary"
                   style={{ fontVariationSettings: "'FILL' 1" }}
@@ -113,24 +206,32 @@ export default function HomePage() {
                   stars
                 </span>
               </div>
-              <div>
-                <p className="font-label-bold text-on-surface">워터 가든 방문하기</p>
-                <p className="text-xs text-on-surface-variant">보상: 꼬부기 배지</p>
+              <div className="min-w-0">
+                <p className="font-label-bold text-on-surface truncate">{featured.title}</p>
+                <p className="text-xs text-on-surface-variant truncate">{featured.subtitle}</p>
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full border-4 border-tertiary flex items-center justify-center">
-              <span className="material-symbols-outlined text-tertiary text-lg">check</span>
-            </div>
+            {featured.checked ? (
+              <div className="w-8 h-8 shrink-0 rounded-full border-4 border-tertiary flex items-center justify-center">
+                <span className="material-symbols-outlined text-tertiary text-lg">check</span>
+              </div>
+            ) : (
+              <div className="w-8 h-8 shrink-0 rounded-full border-4 border-surface-variant flex items-center justify-center opacity-40">
+                <span className="material-symbols-outlined text-on-surface-variant text-lg">radio_button_unchecked</span>
+              </div>
+            )}
           </div>
 
           <div className="h-4 w-full bg-surface-container-highest rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-tertiary to-tertiary-container w-[60%] rounded-full" />
+            <div
+              className="h-full bg-gradient-to-r from-tertiary to-tertiary-container rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(pct, totalSpots > 0 && collectedCount > 0 ? 8 : 0)}%` }}
+            />
           </div>
-        </section>
+        </Link>
       </main>
 
       <BottomNav />
     </div>
   )
 }
-

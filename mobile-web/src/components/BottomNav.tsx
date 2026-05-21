@@ -1,13 +1,27 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 
-type TabKey = 'map' | 'rally' | 'scan' | 'profile'
+const TABS = [
+  { key: 'home', to: '/', label: '홈', icon: 'home' },
+  { key: 'rally', to: '/rally', label: '스탬프 랠리', icon: 'capture' },
+  { key: 'map', to: '/map', label: '포켓맵', icon: 'map' },
+  { key: 'camera', to: '/camera', label: '카메라', icon: 'photo_camera' },
+] as const
 
-function activeTabFromPath(pathname: string): TabKey {
-  if (pathname.startsWith('/map')) return 'map'
+type TabKey = (typeof TABS)[number]['key']
+
+const ENTER_NEXT_KEYS: TabKey[] = ['home', 'rally', 'map', 'camera']
+
+function activeTabFromPath(pathname: string, search: string): TabKey | null {
+  if (pathname === '/enter') {
+    const next = new URLSearchParams(search).get('next') || ''
+    if (ENTER_NEXT_KEYS.includes(next as TabKey)) return next as TabKey
+    return null
+  }
+  if (pathname === '/' || pathname === '') return 'home'
   if (pathname.startsWith('/rally')) return 'rally'
-  if (pathname.startsWith('/scan')) return 'scan'
-  if (pathname.startsWith('/profile')) return 'profile'
-  return 'map'
+  if (pathname.startsWith('/map')) return 'map'
+  if (pathname.startsWith('/camera')) return 'camera'
+  return null
 }
 
 function TabItem({
@@ -23,37 +37,41 @@ function TabItem({
   isActive: boolean
   onGo: (to: string) => void
 }) {
-  if (isActive) {
-    return (
-      <button
-        type="button"
-        onClick={() => onGo(to)}
-        className="flex items-center justify-center h-16 px-4 rounded-full border-4 border-slate-900 bg-white shadow-[0_6px_0_0_rgba(0,0,0,0.12)]"
-        aria-current="page"
-      >
-        <div className="w-12 h-12 rounded-full bg-primary-container flex flex-col items-center justify-center">
-          <span
-            className="material-symbols-outlined text-slate-900 leading-none"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            {icon}
-          </span>
-          <span className="text-[11px] font-bold leading-none text-slate-900 mt-0.5">
-            {label}
-          </span>
-        </div>
-      </button>
-    )
-  }
-
   return (
     <button
       type="button"
       onClick={() => onGo(to)}
-      className="flex flex-col items-center justify-center w-16 h-16 text-slate-400 hover:text-slate-700 transition-colors"
+      aria-current={isActive ? 'page' : undefined}
+      className="flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 py-0.5"
     >
-      <span className="material-symbols-outlined text-2xl leading-none">{icon}</span>
-      <span className="text-[11px] font-bold leading-none mt-1">{label}</span>
+      <span
+        className={
+          'flex h-12 w-12 shrink-0 items-center justify-center rounded-full ' +
+          (isActive
+            ? 'border-2 border-slate-900 bg-primary-container'
+            : 'bg-transparent')
+        }
+      >
+        <span
+          className={
+            'material-symbols-outlined text-[24px] leading-none ' +
+            (isActive ? 'text-slate-900' : 'text-on-surface-variant')
+          }
+          style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
+        >
+          {icon}
+        </span>
+      </span>
+      <span
+        className={
+          'text-[10px] font-bold leading-tight text-center ' +
+          (label.length > 4 ? 'px-0.5' : 'whitespace-nowrap') +
+          ' ' +
+          (isActive ? 'text-slate-900' : 'text-on-surface-variant')
+        }
+      >
+        {label}
+      </span>
     </button>
   )
 }
@@ -61,20 +79,25 @@ function TabItem({
 export default function BottomNav() {
   const loc = useLocation()
   const nav = useNavigate()
-  const active = activeTabFromPath(loc.pathname)
+  const active = activeTabFromPath(loc.pathname, loc.search)
   const go = (to: string) => nav(to)
 
   return (
-    <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4">
-      <div className="w-[92%] max-w-md bg-white rounded-full border-4 border-slate-900 shadow-[0_10px_0_0_rgba(0,0,0,0.9)] px-3 py-2">
-        <div className="flex items-center justify-between gap-2">
-          <TabItem to="/map" label="지도" icon="map" isActive={active === 'map'} onGo={go} />
-          <TabItem to="/rally" label="랠리" icon="capture" isActive={active === 'rally'} onGo={go} />
-          <TabItem to="/scan" label="스캔" icon="qr_code_scanner" isActive={active === 'scan'} onGo={go} />
-          <TabItem to="/profile" label="정보" icon="person" isActive={active === 'profile'} onGo={go} />
+    <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="pointer-events-auto w-full max-w-md min-w-[280px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-3 py-2.5">
+        <div className="flex w-full flex-row items-end justify-between gap-1">
+          {TABS.map((tab) => (
+            <TabItem
+              key={tab.key}
+              to={tab.to}
+              label={tab.label}
+              icon={tab.icon}
+              isActive={active != null && active === tab.key}
+              onGo={go}
+            />
+          ))}
         </div>
       </div>
     </nav>
   )
 }
-
