@@ -1,5 +1,5 @@
-<!DOCTYPE html> 
-<html lang="ko" class="temi-home-doc">
+<!DOCTYPE html>
+<html lang="ko" class="temi-landing-doc">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
@@ -10,86 +10,251 @@
     />
     <title>2026 포켓몬 페스티벌</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="css/style.css?v=__ASSET_VERSION__" />
-    <link rel="stylesheet" href="home.css?v=__ASSET_VERSION__" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@600;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="home-landing.css?v=__ASSET_VERSION__" />
+    <script src="js/temi-bridge.js?v=__ASSET_VERSION__" defer></script>
   </head>
-  <body class="temi-home">
-    <div class="stage">
-      <header class="top-bar top-bar--centered">
-        <div class="top-bar__brand">
-          <h1>2026 포켓몬 페스티벌</h1>
-        </div>
-      </header>
+  <body class="temi-landing temi-home">
+    <div id="navToast" class="tl-nav-toast" role="status" aria-live="polite"></div>
 
-      <main class="screen-body" role="main">
-        <h2 class="visually-hidden">주요 메뉴</h2>
-        <div class="button-grid" role="toolbar" aria-label="주요 메뉴">
-          <button
-            type="button"
-            class="main-btn main-btn--nav"
-            data-nav="guide.html"
-            aria-label="전시장 안내"
-          ></button>
-          <button
-            type="button"
-            class="main-btn main-btn--stamp"
-            data-nav="rally-qr.html"
-            aria-label="스탬프 랠리"
-          ></button>
-          <button
-            type="button"
-            class="main-btn main-btn--photo"
-            data-nav="photo-intro.html"
-            aria-label="사진 찍기"
-          ></button>
-          <button
-            type="button"
-            class="main-btn main-btn--event"
-            data-nav="events.html"
-            aria-label="이벤트 안내"
-          ></button>
-        </div>
-      </main>
-
-      <div class="voice-dock">
-        <button type="button" class="voice-btn" id="btnVoice" aria-label="메뉴 음성 안내">
-          음성으로 메뉴 듣기
+    <header class="tl-header">
+      <a class="tl-brand" href="index.html">Pokemon Exhibition</a>
+      <nav class="tl-nav" aria-label="주요 메뉴">
+        <a href="rally-qr.html" data-nav="rally-qr.html">Stamp Rally</a>
+        <a href="guide.html" data-nav="guide.html">Map</a>
+        <a href="photo-intro.html" data-nav="photo-intro.html">Photo Booth</a>
+        <a href="events.html" data-nav="events.html">Events</a>
+      </nav>
+      <div class="tl-header-actions">
+        <button type="button" class="tl-icon-btn" id="btnNotify" aria-label="알림">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <button type="button" class="tl-icon-btn" id="btnVoiceHeader" aria-label="음성 안내">
+          <span class="material-symbols-outlined">record_voice_over</span>
         </button>
       </div>
+    </header>
+
+    <main class="temi-scroll tl-home-scroll">
+      <section class="tl-hero-wrap" aria-labelledby="hero-title">
+        <div class="tl-hero">
+          <div class="tl-hero-copy">
+            <span class="tl-badge">2026 POKEMON FESTIVAL</span>
+            <h1 id="hero-title">
+              반가워요 모험가님!<br />
+              <span class="accent">피카츄</span>가 기다려요!
+            </h1>
+            <p>
+              전시회 곳곳에 숨겨진 보물을 찾고, 테미 로봇 친구와 함께 즐거운 추억을 만들어보세요.
+            </p>
+            <button type="button" class="tl-btn-primary" data-nav="guide.html">
+              전시장 안내 시작
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+          <div class="tl-hero-visual">
+            <div class="tl-hero-art" aria-hidden="true">⚡</div>
+            <div class="tl-temi-card">
+              <div class="icon-wrap">
+                <span class="material-symbols-outlined">smart_toy</span>
+              </div>
+              <div>
+                <strong>안녕! 나는 테미야</strong>
+                <span>가이드를 도와줄게!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tl-section" aria-labelledby="programs-title">
+        <h2 id="programs-title" class="tl-section-title">주요 프로그램</h2>
+        <div class="tl-bento">
+          <button type="button" class="tl-card" data-nav="rally-qr.html">
+            <div class="tl-card-thumb tl-card-thumb--rally"></div>
+            <div class="tl-card-body">
+              <div class="tl-card-icon tl-card-icon--rally">
+                <span class="material-symbols-outlined">qr_code_scanner</span>
+              </div>
+              <h3>스탬프 랠리</h3>
+              <p>전시장 곳곳을 누비며 스탬프를 모으고 한정판 굿즈를 받으세요!</p>
+              <span class="tl-card-cta tl-card-cta--rally">자세히 보기</span>
+            </div>
+          </button>
+
+          <button type="button" class="tl-card" data-nav="guide.html" data-goto-demo="ENTRANCE">
+            <div class="tl-card-thumb tl-card-thumb--map"></div>
+            <div class="tl-card-body">
+              <div class="tl-card-icon tl-card-icon--map">
+                <span class="material-symbols-outlined">map</span>
+              </div>
+              <h3>전시 지도로 찾기</h3>
+              <p>넓은 전시장을 한눈에! 구역을 선택하면 테미가 안내해 드려요.</p>
+              <span class="tl-card-cta tl-card-cta--map">지도 열기</span>
+            </div>
+          </button>
+
+          <button type="button" class="tl-card" data-nav="photo-intro.html">
+            <div class="tl-card-thumb tl-card-thumb--photo"></div>
+            <div class="tl-card-body">
+              <div class="tl-card-icon tl-card-icon--photo">
+                <span class="material-symbols-outlined">photo_camera</span>
+              </div>
+              <h3>인생네컷 포토부스</h3>
+              <p>귀여운 포켓몬 프레임과 함께 오늘의 모험을 사진으로 기록하세요.</p>
+              <span class="tl-card-cta tl-card-cta--photo">프레임 보기</span>
+            </div>
+          </button>
+
+          <button type="button" class="tl-card" data-nav="events.html">
+            <div class="tl-card-thumb tl-card-thumb--event"></div>
+            <div class="tl-card-body">
+              <div class="tl-card-icon tl-card-icon--event">
+                <span class="material-symbols-outlined">emoji_events</span>
+              </div>
+              <h3>이벤트 및 퀴즈</h3>
+              <p>매 시각 정각에 열리는 퀴즈 타임! 최고의 마스터에 도전하세요.</p>
+              <span class="tl-card-cta tl-card-cta--event">일정 확인</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="tl-stats" aria-label="전시 정보">
+        <div class="tl-stats-main">
+          <div>
+            <h4>함께 성장하는 마스터</h4>
+            <p>스탬프 랠리와 전시 안내를 테미와 함께 즐겨 보세요.</p>
+            <div class="tl-stats-pills">
+              <div class="tl-pill">
+                <strong>5</strong>
+                <span>Stamps</span>
+              </div>
+              <div class="tl-pill">
+                <strong>4</strong>
+                <span>Zones</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tl-stats-side">
+          <span class="material-symbols-outlined">robot_2</span>
+          <h4>테미 로봇 가이드</h4>
+          <p>전시장이 처음이신가요? 구역 안내 화면에서 목적지를 선택해 보세요.</p>
+          <a class="tl-link" href="guide.html" data-nav="guide.html">
+            테미 기능 알아보기
+            <span class="material-symbols-outlined">chevron_right</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="tl-footer">
+      <div class="tl-footer-inner">
+        <div>
+          <div class="tl-footer-brand">Pokemon Exhibition</div>
+          <p>© 2026 Pokemon Festival. 전시 안내·스탬프 랠리·포토부스 키오스크.</p>
+        </div>
+      </div>
+    </footer>
+
+    <div class="tl-voice-dock">
+      <button type="button" class="tl-voice-btn" id="btnVoice" aria-label="메뉴 음성 안내">
+        음성으로 메뉴 듣기
+      </button>
     </div>
+
+    <button type="button" class="tl-fab" id="btnFabQr" aria-label="스탬프 QR 안내">
+      <span class="material-symbols-outlined">qr_code_scanner</span>
+    </button>
 
     <script>
       (function () {
-        var el = document.getElementById("locLine");
-        if (el) el.remove();
-        document.querySelectorAll(".top-bar__brand p.muted").forEach(function (n) {
-          n.remove();
-        });
-        document.querySelectorAll(".top-bar__brand > *").forEach(function (n) {
-          if (n.tagName && n.tagName.toLowerCase() === "h1") return;
-          if (n.textContent && n.textContent.indexOf("현재 위치") !== -1) n.remove();
-        });
-      })();
+        var WELCOME =
+          "2026 포켓몬 페스티벌에 오신 것을 환영합니다. 스탬프 랠리, 전시 지도, 포토부스, 이벤트 중에서 원하는 메뉴를 눌러 주세요.";
 
-      document.querySelectorAll("[data-nav]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          location.href = btn.getAttribute("data-nav");
-        });
-      });
-
-      document.getElementById("btnVoice").addEventListener("click", function () {
-        if (!window.speechSynthesis) {
-          alert("이 환경에서는 음성 합성을 지원하지 않습니다.");
-          return;
+        function speak(text) {
+          if (window.TemiBridge && typeof window.TemiBridge.speak === "function") {
+            window.TemiBridge.speak(text);
+            return;
+          }
+          if (!window.speechSynthesis) {
+            alert("이 환경에서는 음성 합성을 지원하지 않습니다.");
+            return;
+          }
+          var u = new SpeechSynthesisUtterance(text);
+          u.lang = "ko-KR";
+          u.rate = 0.95;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
         }
-        var u = new SpeechSynthesisUtterance(
-          "2026 포켓몬 페스티벌에 오신 것을 환영합니다. 전시장 안내, 스탬프 랠리, 사진 찍기, 이벤트 안내 중에서 원하는 버튼을 눌러 주세요."
-        );
-        u.lang = "ko-KR";
-        u.rate = 0.95;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
-      });
+
+        function go(href) {
+          if (href) location.href = href;
+        }
+
+        document.querySelectorAll("[data-nav]").forEach(function (el) {
+          el.addEventListener("click", function (ev) {
+            var href = el.getAttribute("data-nav");
+            if (!href) return;
+            if (el.tagName === "A") ev.preventDefault();
+            var demo = el.getAttribute("data-goto-demo");
+            if (demo && window.TemiBridge && window.TemiBridge.goto(demo)) {
+              return;
+            }
+            go(href);
+          });
+        });
+
+        document.getElementById("btnFabQr").addEventListener("click", function () {
+          go("rally-qr.html");
+        });
+
+        document.getElementById("btnVoice").addEventListener("click", function () {
+          speak(WELCOME);
+        });
+        document.getElementById("btnVoiceHeader").addEventListener("click", function () {
+          speak(WELCOME);
+        });
+        document.getElementById("btnNotify").addEventListener("click", function () {
+          speak("지금은 새로운 알림이 없습니다.");
+        });
+
+        var toast = document.getElementById("navToast");
+        var toastTimer;
+        function showToast(msg) {
+          if (!toast) return;
+          toast.textContent = msg;
+          toast.classList.add("is-visible");
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () {
+            toast.classList.remove("is-visible");
+          }, 3200);
+        }
+
+        var labels = { moving: "이동 중…", arrived: "도착했어요!", error: "이동할 수 없어요", idle: "" };
+        window.addEventListener("temi:nav", function (ev) {
+          var d = (ev && ev.detail) || {};
+          var msg = labels[d.state] || d.state || "";
+          if (d.locationId) msg += " (" + d.locationId + ")";
+          if (msg) showToast(msg);
+          if (d.state === "arrived" && d.locationId) {
+            setTimeout(function () {
+              go("guide.html");
+            }, 800);
+          }
+        });
+
+      })();
     </script>
   </body>
 </html>
