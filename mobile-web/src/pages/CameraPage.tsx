@@ -1,59 +1,138 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
+
+const FILTER_BASE = `${import.meta.env.BASE_URL}filters/`
+
+type FilterChoice =
+  | { id: 'none'; label: string; icon: string }
+  | { id: 'filter-1' | 'filter-2'; label: string; img: string }
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const sourceRatio = sourceWidth / sourceHeight
+  const targetRatio = width / height
+  let drawWidth = width
+  let drawHeight = height
+  let drawX = x
+  let drawY = y
+
+  if (sourceRatio > targetRatio) {
+    drawWidth = height * sourceRatio
+    drawX = x + (width - drawWidth) / 2
+  } else {
+    drawHeight = width / sourceRatio
+    drawY = y + (height - drawHeight) / 2
+  }
+
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight)
+}
+
+function drawFallbackOverlay(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  filterId: string
+) {
+  if (filterId === 'none') return
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(13, 22, 54, 0.92)'
+  ctx.fillRect(0, height * 0.08, width, height * 0.08)
+  ctx.fillRect(0, height * 0.84, width, height * 0.08)
+
+  ctx.fillStyle = filterId === 'filter-1' ? '#81c784' : '#9575cd'
+  ctx.beginPath()
+  ctx.arc(width * 0.18, height * 0.26, width * 0.1, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = filterId === 'filter-1' ? '#ffb74d' : '#f48fb1'
+  ctx.beginPath()
+  ctx.arc(width * 0.76, height * 0.7, width * 0.12, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+  ctx.font = `${Math.max(18, Math.round(width * 0.05))}px sans-serif`
+  ctx.fillText(filterId === 'filter-1' ? 'FILTER 1' : 'FILTER 2', width * 0.05, height * 0.18)
+  ctx.restore()
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = reject
+    image.src = src
+  })
+}
 
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const [err, setErr] = useState('')
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
-  const [flashOn, setFlashOn] = useState(false)
-
-  const [selectedFilter, setSelectedFilter] = useState<string>('eevee')
+  const completedStripRef = useRef('')
+  const [err, setErr] = useState(() =>
+    typeof navigator !== 'undefined' && !navigator.mediaDevices?.getUserMedia
+      ? '이 브라우저는 카메라를 지원하지 않습니다.'
+      : ''
+  )
+  const [selectedFilter, setSelectedFilter] = useState<string>('filter-1')
   const [shots, setShots] = useState<(string | null)[]>([null, null, null, null])
   const [recent, setRecent] = useState<string[]>([])
+  const [missingFilters, setMissingFilters] = useState<Record<string, boolean>>({})
+
+  const filterChoices = useMemo<FilterChoice[]>(
+    () => [
+      { id: 'none', label: '없음', icon: 'block' },
+      { id: 'filter-1', label: '필터 1', img: `${FILTER_BASE}filter_overlay1.png` },
+      { id: 'filter-2', label: '필터 2', img: `${FILTER_BASE}filter_overlay2.png` },
+    ],
+    []
+  )
+
   const nextShotIndex = useMemo(() => {
     const idx = shots.findIndex((x) => !x)
     return idx < 0 ? 0 : idx
   }, [shots])
 
-  const filterChoices = useMemo(
-    () => [
-      { id: 'none', label: '없음', icon: 'block' as const },
-      {
-        id: 'eevee',
-        label: '이브이',
-        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAdV-L-qZeum1PlLhAZFxyps0rbSXhYz50UgwmveEKCyH3ZhyZ1lrpK8EcNV7oT8xd8u_3R_ZzCe8TN6e7y3rjBiYbLPTR5Ewu9O93huNeANAWxy8MP7mGgnK-hx4veNTnSzC0sD6q-T2w4gGZh1TtBDxCIptT9S3rc573x60zq1MzoSjagd0lteqWYBpF7ATYXpaJWfUXI5d9iTo3wfp0Fs9kxDUxq_4X0k0W-ULET6jfdlTfnDPfrm5aqF6A58kUEQ06a3HsRB4g',
-      },
-      {
-        id: 'snorlax',
-        label: '잠만보',
-        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB07bSU8HlcqO-aNg0F-PhSzTr5v8QuJTV_w_t-YLaeDNrjlF6CZim4pNd8WCqgHGl1bUcqtPa8WOoVFOtljEAIU-odZp2bxz0BzcUWDRf7k2FchBC204g_T_g-x_lontuuKm5R_BtH6FZhP5Gjr5y3WM-tQRICluX3mx21GYLWRe5ZZExakZnz2AF-gQ-44Z2jnJ13Z3Ujwvyfbu-hv9C9ifo52s8Rbim7UAfHB1rTTl32sDVISXnQwbpOyiVtjaBBEsLAJf4DzdQ',
-      },
-      {
-        id: 'jigglypuff',
-        label: '푸린',
-        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCOp-K2PEOWdwlwsa480zJsVH8ycpu0qV357xQQRerUpKZHQs4O2FcPBVrKSJSCJ91X1ksLXWTwW7FEzoQQDVyB34kJzVAhFfHEFOlT9dak9vrL-G7lcYBVCMOCzqJeMoUddaTlIzaKiviJJaIKLlC6jmkayVNYeMVs0_MPbtnAUtNiXS1vSAGGcIfZJMkDmAZc857W4JfNFHwaAeOAnFHxyF9AL_bGL6qsrjJvL9DOAhubkA1pgz5KiuFGEdpz2M5T5ZzK9JsyUNY',
-      },
-      {
-        id: 'pikachu',
-        label: '피카츄',
-        img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3g9NQsaDoIxs7VwEcQCIJDgGw8z1r2u1dGr_V1_KFJwB-5jfIlzjmjpjrSy8JIGkoMX1Jon-QCd8dL1N3x-gML3wGH4KicN6jQfPm4itr3aAOVmUbxe8T0TDLC25slJ64ZXlJ6_7TYjY8YJbl07LJ8bLZthxhmo7ZuzPW5AkkvFHl8XPrm8ENUNHljTZHVEWm7A72X5D8wrSW0blvXS7wLq6sVAAgBwT-aLe4PkYN_m_Y3lKqjLgZUIETOc-tuN_-wlyZw13ydu8',
-      },
-    ],
-    []
+  const selectedFilterChoice = useMemo(
+    () => filterChoices.find((filter) => filter.id === selectedFilter) || filterChoices[0],
+    [filterChoices, selectedFilter]
   )
 
-  const overlayImg = useMemo(() => {
-    const c = filterChoices.find((x) => x.id === selectedFilter) as any
-    return c && c.img ? (c.img as string) : ''
-  }, [filterChoices, selectedFilter])
+  const overlayImg = 'img' in selectedFilterChoice ? selectedFilterChoice.img : ''
+  const showFallbackOverlay =
+    selectedFilter !== 'none' && (!overlayImg || missingFilters[selectedFilter])
+
+  function selectFilter(id: string) {
+    setMissingFilters((prev) => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+    setSelectedFilter(id)
+  }
+
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node
+    if (!node || !streamRef.current) return
+    node.srcObject = streamRef.current
+    void node.play().catch(() => {})
+  }, [])
 
   async function startCamera(nextFacing: 'user' | 'environment') {
     setErr('')
     try {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop())
+        streamRef.current.getTracks().forEach((track) => track.stop())
         streamRef.current = null
       }
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -70,119 +149,152 @@ export default function CameraPage() {
     }
   }
 
-  async function flipCamera() {
-    const next = facingMode === 'user' ? 'environment' : 'user'
-    setFacingMode(next)
-    await startCamera(next)
-  }
+  function addShot(dataUrl: string) {
+    setShots((prev) => {
+      const idx = prev.findIndex((x) => !x)
+      if (idx < 0) return [dataUrl, null, null, null]
 
-  async function toggleFlash() {
-    const stream = streamRef.current
-    const track = stream?.getVideoTracks()?.[0]
-    if (!track) return
-    const caps = track.getCapabilities?.() as any
-    if (!caps?.torch) {
-      setFlashOn((v) => !v)
-      return
-    }
-    const next = !flashOn
-    try {
-      await track.applyConstraints({ advanced: [{ torch: next }] } as any)
-      setFlashOn(next)
-    } catch {
-      setFlashOn((v) => !v)
-    }
+      const next = [...prev]
+      next[idx] = dataUrl
+      return next
+    })
   }
 
   function capture() {
-    const v = videoRef.current
-    if (!v) return
-    const w = v.videoWidth || 1280
-    const h = v.videoHeight || 720
+    const video = videoRef.current
+    if (!video) return
+
+    const width = video.videoWidth || 1280
+    const height = video.videoHeight || 720
     const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
+    canvas.width = width
+    canvas.height = height
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.drawImage(v, 0, 0, w, h)
+    ctx.drawImage(video, 0, 0, width, height)
 
-    if (overlayImg) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        const size = Math.round(Math.min(w, h) * 0.22)
-        ctx.save()
-        ctx.globalAlpha = 0.92
-        ctx.drawImage(img, w - size - 24, 24, size, size)
-        ctx.restore()
-        const dataUrl = canvas.toDataURL('image/png')
-        setShots((prev) => {
-          const idx = prev.findIndex((x) => !x)
-          if (idx < 0) return prev
-          const next = [...prev]
-          next[idx] = dataUrl
-          return next
-        })
-        setRecent((r) => [dataUrl, ...r].slice(0, 8))
-      }
-      img.src = overlayImg
+    const save = () => addShot(canvas.toDataURL('image/png'))
+
+    if (!overlayImg) {
+      drawFallbackOverlay(ctx, width, height, selectedFilter)
+      save()
       return
     }
 
-    const dataUrl = canvas.toDataURL('image/png')
-    setShots((prev) => {
-      const idx = prev.findIndex((x) => !x)
-      const at = idx < 0 ? 0 : idx
-      const next = [...prev]
-      next[at] = dataUrl
-      return next
-    })
-    setRecent((r) => [dataUrl, ...r].slice(0, 8))
+    loadImage(overlayImg)
+      .then((overlay) => {
+        setMissingFilters((prev) => {
+          if (!prev[selectedFilter]) return prev
+          const next = { ...prev }
+          delete next[selectedFilter]
+          return next
+        })
+        ctx.drawImage(overlay, 0, 0, width, height)
+        save()
+      })
+      .catch(() => {
+        setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))
+        drawFallbackOverlay(ctx, width, height, selectedFilter)
+        save()
+      })
   }
 
-  function resetShots() {
+  function cycleEffect() {
+    const idx = filterChoices.findIndex((filter) => filter.id === selectedFilter)
+    selectFilter(filterChoices[(idx + 1) % filterChoices.length].id)
+  }
+
+  function resetCameraStrip() {
+    completedStripRef.current = ''
     setShots([null, null, null, null])
   }
 
   useEffect(() => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setErr('이 브라우저는 카메라를 지원하지 않습니다.')
-      return
-    }
-    startCamera(facingMode).catch(() => {})
+    if (!navigator.mediaDevices?.getUserMedia) return
+    void Promise.resolve().then(() => startCamera('user'))
     return () => {
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (!shots.every(Boolean)) return
+
+    const signature = shots.join('|')
+    if (signature === completedStripRef.current) return
+    completedStripRef.current = signature
+
+    const buildStrip = async () => {
+      const images = await Promise.all(shots.map((shot) => loadImage(shot || '')))
+      const canvas = document.createElement('canvas')
+      canvas.width = 720
+      canvas.height = 1280
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.fillStyle = '#745b00'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      const padding = 44
+      const frameX = padding
+      const frameY = padding
+      const frameWidth = canvas.width - padding * 2
+      const frameHeight = canvas.height - padding * 2
+      const radius = 64
+
+      ctx.fillStyle = '#ffeaa8'
+      ctx.beginPath()
+      ctx.roundRect(frameX, frameY, frameWidth, frameHeight, radius)
+      ctx.fill()
+
+      const slotX = frameX + 42
+      const slotWidth = frameWidth - 84
+      const slotHeight = 235
+      const gap = 26
+      const slotStartY = frameY + 42
+
+      images.forEach((image, index) => {
+        const y = slotStartY + index * (slotHeight + gap)
+        ctx.fillStyle = '#f1f5f9'
+        ctx.fillRect(slotX, y, slotWidth, slotHeight)
+        drawCoverImage(ctx, image, image.naturalWidth, image.naturalHeight, slotX, y, slotWidth, slotHeight)
+      })
+
+      ctx.fillStyle = '#745b00'
+      ctx.font = 'bold 28px sans-serif'
+      ctx.fillText('POKEGUIDE PHOTO', slotX, frameY + frameHeight - 42)
+      setRecent((items) => [canvas.toDataURL('image/png'), ...items].slice(0, 8))
+    }
+
+    void buildStrip()
+  }, [shots])
+
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden pb-32">
+    <div className="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden pb-64">
       <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
         <div className="flex items-center gap-4">
-          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
+          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="뒤로">
             <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
           </Link>
           <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
-            POKÉGUIDE
+            POKEGUIDE
           </h1>
         </div>
-        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            capture
-          </span>
-        </div>
+        <span
+          className="material-symbols-outlined text-2xl text-slate-900 dark:text-white"
+          style={{ fontVariationSettings: "'FILL' 1" }}
+        >
+          capture
+        </span>
       </header>
 
-      <main className="max-w-4xl mx-auto px-margin py-lg pb-xl">
+      <main className="mx-auto w-full max-w-[430px] px-4 py-lg pb-64">
         <div className="text-center mb-lg">
-          <h2 className="font-display-lg text-display-lg text-primary mb-xs">인생네컷 찍기!</h2>
-          <p className="text-on-surface-variant font-body-lg">
-            좋아하는 파트너 포켓몬과 함께 멋진 포즈를 취해보세요!
+          <h2 className="font-display-lg text-[34px] leading-tight text-primary mb-xs">인생네컷 찍기!</h2>
+          <p className="text-on-surface-variant text-sm leading-relaxed">
+            좋아하는 파트너 포켓몬과 함께 멋진 사진을 찍어보세요.
           </p>
         </div>
 
@@ -192,53 +304,53 @@ export default function CameraPage() {
           </div>
         ) : null}
 
-        <div className="relative flex flex-col md:flex-row gap-gutter items-start justify-center">
-          <div className="four-cut-frame rounded-xl p-4 w-full max-w-[320px] mx-auto shadow-2xl flex flex-col gap-3 pokemon-card-shadow">
-            {shots.map((s, idx) => {
-              const showLive = !s && idx === nextShotIndex
+        <section className="flex flex-col items-center">
+          <div className="four-cut-frame rounded-xl p-4 w-full max-w-[320px] shadow-2xl flex flex-col gap-3 pokemon-card-shadow">
+            {shots.map((shot, idx) => {
+              const showLive = !shot && idx === nextShotIndex
               return (
                 <div
                   key={idx}
                   className="relative aspect-[4/3] bg-slate-200 overflow-hidden rounded-sm border-2 border-primary/20"
                 >
-                  {s ? (
-                    <img src={s} alt={`컷 ${idx + 1}`} className="w-full h-full object-cover" />
+                  {shot ? (
+                    <img src={shot} alt={`컷 ${idx + 1}`} className="w-full h-full object-cover" />
                   ) : showLive ? (
                     <>
                       <video
-                        ref={videoRef}
+                        ref={attachVideo}
                         className="w-full h-full object-cover"
                         playsInline
                         muted
                         autoPlay
                       />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-32 h-16 bg-primary-container/20 border-2 border-dashed border-primary rounded-full animate-pulse flex items-center justify-center">
-                          <span className="text-[10px] text-primary font-label-bold">AR 필터 적용 중</span>
+                      {showFallbackOverlay ? (
+                        <div className="pointer-events-none absolute inset-0">
+                          <div className="absolute left-0 right-0 top-[8%] h-[8%] bg-slate-950/90" />
+                          <div className="absolute left-0 right-0 bottom-[8%] h-[8%] bg-slate-950/90" />
+                          <div className="absolute left-[10%] top-[20%] h-12 w-12 rounded-full bg-emerald-300/80" />
+                          <div className="absolute right-[12%] bottom-[20%] h-14 w-14 rounded-full bg-orange-300/80" />
                         </div>
-                      </div>
+                      ) : overlayImg ? (
+                        <img
+                          src={overlayImg}
+                          alt=""
+                          className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+                          onError={() => setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))}
+                        />
+                      ) : null}
                     </>
                   ) : (
                     <div className="w-full h-full bg-white/50 flex items-center justify-center border-2 border-primary/10">
                       <span className="material-symbols-outlined text-primary/30 text-4xl">photo_camera</span>
                     </div>
                   )}
-
-                  {showLive ? (
-                    <div className="absolute right-2 top-2 w-12 h-12 rounded-full bg-white/85 flex items-center justify-center border-2 border-primary/20">
-                      {overlayImg ? (
-                        <img src={overlayImg} alt="filter" className="w-9 h-9 object-contain" />
-                      ) : (
-                        <span className="material-symbols-outlined text-primary/40">block</span>
-                      )}
-                    </div>
-                  ) : null}
                 </div>
               )
             })}
 
             <div className="flex justify-between items-center px-1 pt-1">
-              <span className="text-primary font-black text-xs">POKÉGUIDE PHOTO</span>
+              <span className="text-primary font-black text-xs">POKEGUIDE PHOTO</span>
               <span
                 className="material-symbols-outlined text-primary text-xl"
                 style={{ fontVariationSettings: "'FILL' 1" }}
@@ -248,138 +360,123 @@ export default function CameraPage() {
             </div>
           </div>
 
-          <div className="flex-1 w-full max-w-md">
-            <div className="flex justify-center gap-sm mb-md">
+          <div className="fixed bottom-32 left-0 right-0 z-40 flex justify-center px-4 pointer-events-none">
+            <div className="pointer-events-auto flex w-full max-w-[340px] flex-col items-center gap-2 rounded-[2rem] bg-background/95 px-5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur">
               <button
                 type="button"
-                onClick={flipCamera}
-                className="bg-surface-container-high text-on-surface p-sm rounded-full hover:bg-surface-variant transition-colors shadow-sm"
-                aria-label="카메라 전환"
+                onClick={resetCameraStrip}
+                className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-on-surface shadow-sm active:scale-95"
               >
-                <span className="material-symbols-outlined">flip_camera_ios</span>
+                <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+                처음부터 다시 찍기
               </button>
-              <button
-                type="button"
-                onClick={toggleFlash}
-                className="bg-surface-container-high text-on-surface p-sm rounded-full hover:bg-surface-variant transition-colors shadow-sm"
-                aria-label="플래시"
-              >
-                <span className="material-symbols-outlined">{flashOn ? 'flash_on' : 'flash_off'}</span>
-              </button>
-            </div>
-
-            <div className="bg-surface-container-low p-md rounded-lg mb-lg">
-              <div className="flex items-center gap-gutter overflow-x-auto pb-sm no-scrollbar">
-                {filterChoices.map((f: any) => {
-                  const active = selectedFilter === f.id
-                  return (
-                    <div key={f.id} className="flex flex-col items-center gap-xs shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedFilter(f.id)}
-                        className={
-                          'w-16 h-16 rounded-full bg-white border-4 flex items-center justify-center hover:scale-105 transition-transform active:scale-95 ' +
-                          (active
-                            ? 'border-primary-container ring-4 ring-offset-2 ring-primary'
-                            : 'border-slate-200')
-                        }
-                      >
-                        {f.img ? (
-                          <img alt={f.label} className="w-full h-full object-contain p-2" src={f.img} />
-                        ) : (
-                          <span className="material-symbols-outlined text-slate-400">{f.icon}</span>
-                        )}
-                      </button>
-                      <span className={'font-label-bold text-[10px] uppercase ' + (active ? 'text-primary' : 'text-on-surface-variant')}>
-                        {f.label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-gutter">
-              <Link to="/photo/receive" className="flex flex-col items-center gap-2 group">
-                <div className="w-16 h-16 bg-white rounded-xl shadow-lg border-4 border-slate-100 flex items-center justify-center group-active:scale-90 transition-transform overflow-hidden relative">
+              <div className="flex w-full items-end justify-between gap-3">
+              <Link to="/photo/receive" className="flex w-20 flex-col items-center gap-2">
+                <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-lg">
                   {recent[0] ? (
-                    <img alt="Gallery Preview" className="w-full h-full object-cover opacity-60" src={recent[0]} />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100" />
-                  )}
-                  <span className="material-symbols-outlined absolute text-on-surface text-3xl">photo_library</span>
-                </div>
-                <span className="font-label-bold text-xs uppercase tracking-wider text-on-surface-variant">갤러리</span>
+                    <img alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" src={recent[0]} />
+                  ) : null}
+                  <span className="material-symbols-outlined relative text-slate-900 text-[26px]">photo_library</span>
+                </span>
+                <span className="text-[11px] font-bold leading-none text-on-surface">갤러리</span>
               </Link>
 
               <button
                 type="button"
                 onClick={capture}
-                className="relative z-10 w-28 h-28 rounded-full border-8 border-slate-900 shadow-[0_12px_0_0_rgba(0,0,0,0.2)] overflow-hidden group active:translate-y-2 active:shadow-none transition-all duration-100"
-                aria-label="촬영"
+                className="relative h-24 w-24 shrink-0 rounded-full border-[7px] border-slate-900 bg-white shadow-[0_7px_0_0_rgba(0,0,0,0.22)] active:translate-y-1 active:shadow-[0_3px_0_0_rgba(0,0,0,0.22)] transition-transform overflow-hidden"
+                aria-label="사진 찍기"
               >
-                <div className="pokeball-inner absolute inset-0 w-full h-full" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-full h-3 bg-slate-900" />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full border-4 border-slate-900 bg-white flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full border-2 border-slate-300 bg-white" />
-                  </div>
-                </div>
+                <span className="pokeball-inner absolute inset-0" />
+                <span className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 bg-slate-900" />
+                <span className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-slate-900 bg-white">
+                  <span className="h-3 w-3 rounded-full border-2 border-slate-300 bg-white" />
+                </span>
               </button>
 
-              <button type="button" onClick={resetShots} className="flex flex-col items-center gap-2 group">
-                <div className="w-16 h-16 bg-white rounded-xl shadow-lg border-4 border-slate-100 flex items-center justify-center group-active:scale-90 transition-transform">
-                  <span className="material-symbols-outlined text-slate-400 text-3xl">settings_b_roll</span>
-                </div>
-                <span className="font-label-bold text-xs uppercase tracking-wider text-on-surface-variant">효과</span>
+              <button type="button" onClick={cycleEffect} className="flex w-20 flex-col items-center gap-2">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-lg">
+                  <span className="material-symbols-outlined text-slate-400 text-[28px]">settings_b_roll</span>
+                </span>
+                <span className="text-[11px] font-bold leading-none text-on-surface">효과</span>
               </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-xl">
+          <div className="mt-md w-full max-w-[360px] overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex items-center gap-3">
+              {filterChoices.map((filter) => {
+                const active = selectedFilter === filter.id
+                const isMissing = missingFilters[filter.id]
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => selectFilter(filter.id)}
+                    className="flex shrink-0 flex-col items-center gap-1"
+                  >
+                    <span
+                      className={
+                        'relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 bg-white transition-transform active:scale-95 ' +
+                        (active ? 'border-primary ring-2 ring-primary-container' : 'border-slate-200')
+                      }
+                    >
+                      {'img' in filter && !isMissing ? (
+                        <img
+                          alt=""
+                          className="h-full w-full object-cover"
+                          src={filter.img}
+                          onLoad={() =>
+                            setMissingFilters((prev) => {
+                              if (!prev[filter.id]) return prev
+                              const next = { ...prev }
+                              delete next[filter.id]
+                              return next
+                            })
+                          }
+                          onError={() => setMissingFilters((prev) => ({ ...prev, [filter.id]: true }))}
+                        />
+                      ) : filter.id === 'none' ? (
+                        <span className="material-symbols-outlined text-slate-400">{filter.icon}</span>
+                      ) : (
+                        <span className="text-[9px] font-black text-primary">{filter.label}</span>
+                      )}
+                    </span>
+                    <span className={'text-[10px] font-bold ' + (active ? 'text-primary' : 'text-on-surface-variant')}>
+                      {filter.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-xl">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-md">최근 찍은 사진</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+          <div className="grid grid-cols-2 gap-gutter">
             {recent.slice(0, 2).map((src, i) => (
               <div
                 key={i}
                 className={
-                  'aspect-[1/2] bg-white p-2 rounded-lg pokemon-card-shadow hover:rotate-0 transition-transform duration-300 cursor-pointer overflow-hidden flex flex-col gap-1 ' +
+                  'aspect-[9/16] bg-white p-2 rounded-lg pokemon-card-shadow hover:rotate-0 transition-transform duration-300 cursor-pointer overflow-hidden ' +
                   (i === 0 ? 'rotate-2' : '-rotate-3')
                 }
               >
-                <div className="flex-1 bg-slate-100 rounded-sm">
-                  <img alt={`Recent Snap ${i + 1}`} className="w-full h-full object-cover" src={src} />
-                </div>
-                <div className="h-1/4 bg-slate-200/50" />
-                <div className="h-1/4 bg-slate-200/50" />
-                <div className="h-1/4 bg-slate-200/50" />
-              </div>
-            ))}
-            {recent.slice(2, 4).map((src, i) => (
-              <div
-                key={`sq-${i}`}
-                className={
-                  'aspect-square bg-white p-2 rounded-lg pokemon-card-shadow hover:rotate-0 transition-transform duration-300 cursor-pointer hidden md:block ' +
-                  (i === 0 ? 'rotate-1' : '-rotate-1')
-                }
-              >
-                <img alt={`Recent Snap ${i + 3}`} className="w-full h-full object-cover rounded-sm" src={src} />
+                <img alt={`최근 인생네컷 ${i + 1}`} className="h-full w-full rounded-sm object-cover" src={src} />
               </div>
             ))}
             {!recent.length ? (
-              <div className="col-span-2 md:col-span-4 text-on-surface-variant text-sm">
-                아직 촬영한 사진이 없습니다. 가운데 포켓볼 버튼을 눌러 촬영해 보세요.
+              <div className="col-span-2 text-on-surface-variant text-sm">
+                아직 완성된 인생네컷이 없습니다. 네 컷을 모두 촬영하면 여기에 추가됩니다.
               </div>
             ) : null}
           </div>
-        </div>
+        </section>
       </main>
 
       <BottomNav />
     </div>
   )
 }
-
