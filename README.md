@@ -9,7 +9,7 @@
 3. **Trust Project** 후, 우측 또는 하단의 **Maven** 가져오기(동기화)가 끝날 때까지 기다립니다.
 4. `src/main/java/com/temi/stamprally/StampRallyApplication.java`를 연 다음, 클래스 옆 **초록 실행 버튼** 또는 에디터에서 **우클릭 → Run 'StampRallyApplication'**으로 실행합니다.
 5. 실행이 되면 브라우저에서 아래 주소로 확인합니다.
-   - 테미 홈: [http://localhost:8080/temi/index.html](http://localhost:8080/temi/index.html) (1920×1200 권장)
+   - 테미 홈: [http://localhost:8080/temi/index.html](http://localhost:8080/temi/index.html) (1920×1200, 랜딩 UI + `js/temi-bridge.js` — Android 연동은 `temi/BRIDGE.md`)
    - 모바일: [http://localhost:8080/mobile/index.html](http://localhost:8080/mobile/index.html)
 
 ### Maven으로 실행하고 싶을 때
