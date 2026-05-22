@@ -1,16 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { APP_TABS, ENTER_NEXT_KEYS, type AppTabKey } from '../lib/navTabs'
 
-const TABS = [
-  { key: 'home', to: '/', label: '홈', icon: 'home' },
-  { key: 'events', to: '/events', label: '이벤트', icon: 'event' },
-  { key: 'rally', to: '/rally', label: '스탬프 랠리', icon: 'capture' },
-  { key: 'map', to: '/map', label: '포켓맵', icon: 'map' },
-  { key: 'camera', to: '/camera', label: '카메라', icon: 'photo_camera' },
-] as const
-
-type TabKey = (typeof TABS)[number]['key']
-
-const ENTER_NEXT_KEYS: TabKey[] = ['home', 'events', 'rally', 'map', 'camera']
+const TABS = APP_TABS
+type TabKey = AppTabKey
 
 function activeTabFromPath(pathname: string, search: string): TabKey | null {
   if (pathname === '/enter') {

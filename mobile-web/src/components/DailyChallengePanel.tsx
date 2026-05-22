@@ -13,6 +13,8 @@ import {
   checkMemoryAnswer,
   checkTextAnswer,
 } from '../lib/challengeApi'
+import { getVisitorToken } from '../lib/storage'
+import { fetchVisitorProfile, submitQuizResult } from '../lib/visitorApi'
 
 const DAILY_CHALLENGES = [
   {
@@ -62,6 +64,21 @@ export default function DailyChallengePanel({ topic, onToast }: Props) {
 
   const quizRank = getQuizRank(quizXp)
 
+  useEffect(() => {
+    if (!getVisitorToken()) return
+    ;(async () => {
+      try {
+        const profile = await fetchVisitorProfile()
+        if (profile) {
+          setQuizXp(profile.quizXp)
+          saveQuizXp(profile.quizXp)
+        }
+      } catch {
+        /* keep local */
+      }
+    })()
+  }, [])
+
   function isCorrect(ch: DailyChallenge) {
     if (ch.options.length >= 2) return quizPick === ch.answerIndex
     if (ch.type === 'puzzle') return checkTextAnswer(textAnswer, ch)
@@ -72,14 +89,39 @@ export default function DailyChallengePanel({ topic, onToast }: Props) {
   useEffect(() => {
     if (!submitted || !challenge || xpAwardedRef.current) return
     xpAwardedRef.current = true
-    const gain = xpGainForAnswer(challenge.rewardLabel, isCorrect(challenge))
+    const correct = isCorrect(challenge)
+    const gain = xpGainForAnswer(challenge.rewardLabel, correct)
     setLastXpGain(gain)
-    setQuizXp((prev) => {
-      const next = prev + gain
+
+    const applyXp = (next: number) => {
+      setQuizXp(next)
       saveQuizXp(next)
-      return next
-    })
+    }
+
+    if (getVisitorToken()) {
+      ;(async () => {
+        try {
+          const serverXp = await submitQuizResult({
+            challengeType: challenge.type,
+            title: challenge.title,
+            correct,
+            xpGained: gain,
+          })
+          applyXp(serverXp)
+        } catch {
+          setQuizXp((prev) => applyXpLocal(prev, gain))
+        }
+      })()
+    } else {
+      setQuizXp((prev) => applyXpLocal(prev, gain))
+    }
   }, [submitted, challenge, quizPick, textAnswer, memoryAnswer])
+
+  function applyXpLocal(prev: number, gain: number) {
+    const next = prev + gain
+    saveQuizXp(next)
+    return next
+  }
 
   async function startChallenge(type: string) {
     setActiveType(type)

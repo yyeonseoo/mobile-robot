@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Link } from 'react-router-dom'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
+import { getVisitorToken } from '../lib/storage'
+import { uploadVisitorPhoto } from '../lib/visitorApi'
 
 const FILTER_BASE = `${import.meta.env.BASE_URL}filters/`
 
@@ -273,7 +275,13 @@ export default function CameraPage() {
         y += height
       })
 
-      setRecent((items) => [canvas.toDataURL('image/png'), ...items].slice(0, 8))
+      const dataUrl = canvas.toDataURL('image/png')
+      setRecent((items) => [dataUrl, ...items].slice(0, 8))
+      if (getVisitorToken()) {
+        uploadVisitorPhoto(dataUrl, 'strip').catch(() => {
+          /* 오프라인·용량 등 — 로컬 미리보기는 유지 */
+        })
+      }
     }
 
     void buildStrip()

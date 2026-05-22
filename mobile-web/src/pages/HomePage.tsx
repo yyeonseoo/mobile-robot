@@ -3,7 +3,36 @@ import { Link } from 'react-router-dom'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { authHeaders, jsonFetch } from '../lib/api'
+import { HOME_MENU_TABS } from '../lib/navTabs'
 import { getVisitorToken } from '../lib/storage'
+
+const MENU_CARD_STYLE: Record<
+  (typeof HOME_MENU_TABS)[number]['key'],
+  { ring: string; shadow: string; iconClass: string; fill?: boolean }
+> = {
+  events: {
+    ring: 'bg-secondary',
+    shadow: 'shadow-[0_6px_0_0_#930004]',
+    iconClass: 'text-white',
+    fill: true,
+  },
+  rally: {
+    ring: 'bg-secondary-container',
+    shadow: 'shadow-[0_6px_0_0_#930004]',
+    iconClass: 'text-white',
+    fill: true,
+  },
+  map: {
+    ring: 'bg-tertiary',
+    shadow: 'shadow-[0_6px_0_0_#2335b5]',
+    iconClass: 'text-white',
+  },
+  camera: {
+    ring: 'bg-primary-fixed-dim',
+    shadow: 'shadow-[0_6px_0_0_#745b00]',
+    iconClass: 'text-on-primary-fixed',
+  },
+}
 
 type RallyMeta = { totalSpots: number; eventTitle: string }
 type RallyStatus = { collectedCount: number; totalSpots: number; completed: boolean }
@@ -129,52 +158,33 @@ export default function HomePage() {
         </section>
 
         <section className="grid grid-cols-2 gap-gutter">
-          <Link
-            to="/rally"
-            className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
-          >
-            <div className="w-20 h-20 bg-secondary-container rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform shadow-[0_6px_0_0_#930004]">
-              <span
-                className="material-symbols-outlined text-5xl text-white"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+          {HOME_MENU_TABS.map((tab) => {
+            const style = MENU_CARD_STYLE[tab.key]
+            return (
+              <Link
+                key={tab.key}
+                to={tab.to}
+                className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
               >
-                capture
-              </span>
-            </div>
-            <span className="font-headline-md text-headline-md text-on-surface">스탬프 랠리</span>
-          </Link>
-
-          <Link
-            to="/map"
-            className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
-          >
-            <div className="w-20 h-20 bg-tertiary rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform shadow-[0_6px_0_0_#2335b5]">
-              <span className="material-symbols-outlined text-5xl text-white">map</span>
-            </div>
-            <span className="font-headline-md text-headline-md text-on-surface">포켓맵</span>
-          </Link>
-
-          <Link
-            to="/camera"
-            className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
-          >
-            <div className="w-20 h-20 bg-primary-fixed-dim rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform shadow-[0_6px_0_0_#745b00]">
-              <span className="material-symbols-outlined text-5xl text-on-primary-fixed">
-                photo_camera
-              </span>
-            </div>
-            <span className="font-headline-md text-headline-md text-on-surface">포켓캠</span>
-          </Link>
-
-          <Link
-            to="/events"
-            className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
-          >
-            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform shadow-[0_6px_0_0_#930004]">
-              <span className="material-symbols-outlined text-5xl text-white">celebration</span>
-            </div>
-            <span className="font-headline-md text-headline-md text-on-surface">이벤트 AI</span>
-          </Link>
+                <div
+                  className={
+                    'w-20 h-20 rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform ' +
+                    style.ring +
+                    ' ' +
+                    style.shadow
+                  }
+                >
+                  <span
+                    className={'material-symbols-outlined text-5xl ' + style.iconClass}
+                    style={style.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                  >
+                    {tab.icon}
+                  </span>
+                </div>
+                <span className="font-headline-md text-headline-md text-on-surface">{tab.label}</span>
+              </Link>
+            )
+          })}
         </section>
 
         <Link

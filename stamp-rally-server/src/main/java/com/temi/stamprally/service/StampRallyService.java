@@ -13,7 +13,6 @@ import com.temi.stamprally.web.dto.RallyMetaResponse;
 import com.temi.stamprally.web.dto.RallyStatusResponse;
 import com.temi.stamprally.web.dto.StampClaimResponse;
 import com.temi.stamprally.web.dto.StampSpotResponse;
-import com.temi.stamprally.web.dto.VisitorSessionResponse;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -35,13 +34,6 @@ public class StampRallyService {
     this.visitorRepository = visitorRepository;
     this.stampSpotRepository = stampSpotRepository;
     this.collectedStampRepository = collectedStampRepository;
-  }
-
-  @Transactional
-  public VisitorSessionResponse createVisitor(String nickname) {
-    Visitor v = Visitor.create(nickname);
-    visitorRepository.save(v);
-    return new VisitorSessionResponse(v.getToken(), v.getNickname());
   }
 
   @Transactional

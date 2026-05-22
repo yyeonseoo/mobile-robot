@@ -1,3 +1,3 @@
 package com.temi.stamprally.web.dto;
 
-public record CreateSessionRequest(String nickname) {}
+public record CreateSessionRequest(String nickname, String phoneNumber) {}

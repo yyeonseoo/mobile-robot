@@ -1,6 +1,6 @@
 package com.temi.stamprally.web;
 
-import com.temi.stamprally.service.StampRallyService;
+import com.temi.stamprally.visitor.VisitorProfileService;
 import com.temi.stamprally.web.dto.CreateSessionRequest;
 import com.temi.stamprally.web.dto.VisitorSessionResponse;
 import org.springframework.http.HttpStatus;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/sessions")
 public class SessionController {
 
-  private final StampRallyService stampRallyService;
+  private final VisitorProfileService visitorProfileService;
 
-  public SessionController(StampRallyService stampRallyService) {
-    this.stampRallyService = stampRallyService;
+  public SessionController(VisitorProfileService visitorProfileService) {
+    this.visitorProfileService = visitorProfileService;
   }
 
   /** 참가 시작 — 폰/로봇 클라이언트가 받아서 저장할 visitorToken 발급 */
@@ -26,6 +26,7 @@ public class SessionController {
   public VisitorSessionResponse createSession(
       @RequestBody(required = false) CreateSessionRequest body) {
     String nickname = body != null ? body.nickname() : null;
-    return stampRallyService.createVisitor(nickname);
+    String phoneNumber = body != null ? body.phoneNumber() : null;
+    return visitorProfileService.createVisitor(nickname, phoneNumber);
   }
 }
