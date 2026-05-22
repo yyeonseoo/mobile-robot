@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Html5Qrcode } from 'html5-qrcode'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { extractClaimCode } from '../lib/parseQrScan'
 
@@ -89,23 +90,15 @@ export default function ScanPage() {
 
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
-      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
-            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
-          </Link>
-          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
-            POKÉGUIDE
-          </h1>
-        </div>
-        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <AppHeader
+        right={
+          <span className="material-symbols-outlined text-3xl text-slate-900 dark:text-white">
             qr_code_scanner
           </span>
-        </div>
-      </header>
+        }
+      />
 
-      <main className="pt-24 px-gutter max-w-2xl mx-auto space-y-gutter">
+      <main className={`${APP_HEADER_MAIN_PT} px-gutter max-w-2xl mx-auto space-y-gutter`}>
         <section className="text-center space-y-xs">
           <h2 className="font-headline-md text-headline-md text-on-surface">QR 스캔</h2>
           <p className="text-on-surface-variant text-sm">

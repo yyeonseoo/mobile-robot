@@ -16,6 +16,40 @@
 
 **View → Tool Windows → Maven**에서 `stamp-rally-server` → **Plugins** → **spring-boot** → **`spring-boot:run`**을 더블클릭해도 됩니다.
 
+### Claude API (도감·이벤트 추천)
+
+이벤트 화면(`/temi/events.html`, 모바일 `/mobile/app/events`)은 **서버** `POST /api/ai/*` 를 호출합니다. 키는 **`.env` 또는 환경변수**로만 넣고, Git·브라우저에는 넣지 마세요.
+
+**1) `.env` 파일 만들기 (권장)**
+
+```bash
+cd stamp-rally-server
+cp .env.example .env
+# .env 를 열어 ANTHROPIC_API_KEY=sk-ant-api03-... 를 본인 키로 수정
+mvn spring-boot:run
+```
+
+**2) 환경변수로 넣기 (대안)**
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-api03-...
+cd stamp-rally-server && mvn spring-boot:run
+```
+
+**3) 화면에서 확인**
+
+| 화면 | URL |
+|------|-----|
+| 테미 키오스크 | http://localhost:8080/temi/events.html — 검색 / 「Claude 맞춤 추천」 |
+| 모바일 (빌드) | http://localhost:8080/mobile/app/events |
+| 모바일 (개발) | `cd mobile-web && npm run dev` → `/mobile/app/events` (8080 서버 + Vite `/api` 프록시 필요) |
+
+- `POST /api/ai/pokedex` — `{ "query": "피카츄" }`
+- `POST /api/ai/events/recommend` — `{ "interests": "...", "companion": "..." }`
+- `POST /api/ai/challenges/daily` — `{ "type": "puzzle|race|quiz|memory", "topic": "선택" }`
+
+키가 없으면 **503**과 안내 메시지가 반환됩니다. `.env` 는 `.gitignore`에 포함되어 있습니다.
+
 ### 참고
 
 - 기본 프로필은 **dev**입니다. `home.css` 등은 저장 후 **브라우저 새로고침만** 해도 반영되도록, 정적 파일을 `src/main/resources/static/`에서 직접 읽습니다. (Run 작업 디렉터리가 `stamp-rally-server` 모듈 루트여야 합니다.)

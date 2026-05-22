@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 const TABS = [
   { key: 'home', to: '/', label: '홈', icon: 'home' },
+  { key: 'events', to: '/events', label: '이벤트', icon: 'event' },
   { key: 'rally', to: '/rally', label: '스탬프 랠리', icon: 'capture' },
   { key: 'map', to: '/map', label: '포켓맵', icon: 'map' },
   { key: 'camera', to: '/camera', label: '카메라', icon: 'photo_camera' },
@@ -9,7 +10,7 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key']
 
-const ENTER_NEXT_KEYS: TabKey[] = ['home', 'rally', 'map', 'camera']
+const ENTER_NEXT_KEYS: TabKey[] = ['home', 'events', 'rally', 'map', 'camera']
 
 function activeTabFromPath(pathname: string, search: string): TabKey | null {
   if (pathname === '/enter') {
@@ -18,6 +19,7 @@ function activeTabFromPath(pathname: string, search: string): TabKey | null {
     return null
   }
   if (pathname === '/' || pathname === '') return 'home'
+  if (pathname.startsWith('/events')) return 'events'
   if (pathname.startsWith('/rally')) return 'rally'
   if (pathname.startsWith('/map')) return 'map'
   if (pathname.startsWith('/camera')) return 'camera'
@@ -46,7 +48,7 @@ function TabItem({
     >
       <span
         className={
-          'flex h-12 w-12 shrink-0 items-center justify-center rounded-full ' +
+          'flex h-11 w-11 shrink-0 items-center justify-center rounded-full ' +
           (isActive
             ? 'border-2 border-slate-900 bg-primary-container'
             : 'bg-transparent')
@@ -84,8 +86,8 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto w-full max-w-md min-w-[280px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-3 py-2.5">
-        <div className="flex w-full flex-row items-end justify-between gap-1">
+      <div className="pointer-events-auto w-full max-w-lg min-w-[300px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-2 py-2.5">
+        <div className="flex w-full flex-row items-end justify-between gap-0.5">
           {TABS.map((tab) => (
             <TabItem
               key={tab.key}

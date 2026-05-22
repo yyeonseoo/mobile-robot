@@ -8,7 +8,7 @@
       name="viewport"
       content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
     />
-    <title>이벤트 · 퀴즈 | 포켓몬 페스티벌</title>
+    <title>AI 포켓몬 가이드 · 이벤트 | 포켓몬 페스티벌</title>
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,6 +22,7 @@
     />
     <link rel="stylesheet" href="home-landing.css" />
     <link rel="stylesheet" href="events-page.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <script src="js/temi-bridge.js" defer></script>
   </head>
   <body class="temi-landing temi-events">
@@ -45,195 +46,225 @@
       </div>
     </header>
 
-    <main class="temi-scroll ev-events-main">
-      <section class="ev-hero" aria-labelledby="quiz-hero-title">
-        <div class="ev-hero-bg" aria-hidden="true"></div>
-        <div class="ev-hero-inner">
-          <div class="ev-hero-copy">
-            <span class="ev-live-badge">LIVE NOW</span>
-            <h1 id="quiz-hero-title">포켓몬 퀴즈 시간!</h1>
-            <p>
-              오박사님과 함께하는 특별한 퀴즈 타임! 여러분의 포켓몬 지식을 뽐내고 한정판 배지를
-              획득하세요. 지금 바로 도전하세요!
-            </p>
-            <button type="button" class="ev-btn-quiz" id="btnStartQuiz">퀴즈 시작하기</button>
-          </div>
-          <aside class="ev-professor" aria-label="오박사 특별 강의">
-            <div class="ev-professor-art" aria-hidden="true">🔬</div>
-            <p>오박사의 특별 강의</p>
-          </aside>
-        </div>
-      </section>
-
-      <div class="ev-layout">
-        <div class="ev-main-col">
-          <div class="ev-section-head">
-            <h2>
-              <span class="material-symbols-outlined">event</span>
-              진행 중인 이벤트
-            </h2>
-            <button type="button" class="ev-link-all" id="btnShowAll" style="background: none; border: none; cursor: pointer">
-              모두 보기
-            </button>
-          </div>
-
-          <div class="ev-grid">
-            <article class="ev-card" data-event="eevee" data-location="중앙 공원">
-              <div class="ev-card-thumb ev-card-thumb--1">
-                <span class="ev-tag">인기 이벤트</span>
-              </div>
-              <h3>이브이즈 가든 파티</h3>
-              <p class="ev-card-desc">
-                도시의 비밀 정원에서 이브이와 그 진화형들을 만나보세요! 특별한 간식과 기념품이
-                준비되어 있습니다.
-              </p>
-              <div class="ev-meta">
-                <span><span class="material-symbols-outlined">schedule</span> 14:00 - 17:00</span>
-                <span><span class="material-symbols-outlined">location_on</span> 중앙 공원</span>
-              </div>
-              <button type="button" class="ev-btn-join" data-join>참가하기</button>
-            </article>
-
-            <article class="ev-card" data-event="battle" data-location="배틀 아레나">
-              <div class="ev-card-thumb ev-card-thumb--2"></div>
-              <h3>메가 배틀 토너먼트</h3>
-              <p class="ev-card-desc">
-                최강의 트레이너들이 모이는 전당! 여러분의 실력을 증명하고 챔피언 트로피를
-                차지하세요.
-              </p>
-              <div class="ev-meta">
-                <span><span class="material-symbols-outlined">schedule</span> 19:00 - 22:00</span>
-                <span><span class="material-symbols-outlined">location_on</span> 배틀 아레나</span>
-              </div>
-              <button type="button" class="ev-btn-join" data-join>참가하기</button>
-            </article>
-
-            <article class="ev-card" data-event="drawing" data-location="아트 스튜디오">
-              <div class="ev-card-thumb ev-card-thumb--3"></div>
-              <h3>키즈 드로잉 클래스</h3>
-              <p class="ev-card-desc">
-                나만의 포켓몬을 그려보는 창의적인 시간! 전문 일러스트레이터가 기초부터
-                알려드립니다.
-              </p>
-              <div class="ev-meta">
-                <span><span class="material-symbols-outlined">schedule</span> 10:00 - 12:00</span>
-                <span><span class="material-symbols-outlined">location_on</span> 아트 스튜디오</span>
-              </div>
-              <button type="button" class="ev-btn-join" data-join>참가하기</button>
-            </article>
-
-            <article class="ev-card" data-event="goods" data-location="메인 광장">
-              <div class="ev-card-thumb ev-card-thumb--4"></div>
-              <h3>포켓몬 굿즈 페스티벌</h3>
-              <p class="ev-card-desc">
-                오직 이곳에서만 만날 수 있는 한정판 굿즈! 다양한 교환 부스와 팝업 스토어를
-                만나보세요.
-              </p>
-              <div class="ev-meta">
-                <span><span class="material-symbols-outlined">schedule</span> 11:00 - 20:00</span>
-                <span><span class="material-symbols-outlined">location_on</span> 메인 광장</span>
-              </div>
-              <button type="button" class="ev-btn-join" data-join>참가하기</button>
-            </article>
-          </div>
-        </div>
-
-        <aside class="ev-aside" aria-label="퀴즈 순위 및 일정">
-          <div class="ev-panel">
-            <h2>
-              <span class="material-symbols-outlined">military_tech</span>
-              오늘의 퀴즈 왕
-            </h2>
-            <div class="ev-rank-list">
-              <div class="ev-rank-row is-top">
-                <span class="ev-rank-num">1</span>
-                <div class="ev-avatar" aria-hidden="true">⚡</div>
-                <div class="ev-rank-info">
-                  <strong>지우</strong>
-                  <span>정답 20/20 (0:45)</span>
-                </div>
-                <span class="ev-points">990P</span>
-              </div>
-              <div class="ev-rank-row">
-                <span class="ev-rank-num">2</span>
-                <div class="ev-avatar" aria-hidden="true">💧</div>
-                <div class="ev-rank-info">
-                  <strong>이슬</strong>
-                  <span>정답 19/20 (0:52)</span>
-                </div>
-                <span class="ev-points">940P</span>
-              </div>
-              <div class="ev-rank-row">
-                <span class="ev-rank-num">3</span>
-                <div class="ev-avatar" aria-hidden="true">🌿</div>
-                <div class="ev-rank-info">
-                  <strong>웅이</strong>
-                  <span>정답 18/20 (1:05)</span>
-                </div>
-                <span class="ev-points">880P</span>
-              </div>
-            </div>
-            <button type="button" class="ev-btn-rank" id="btnMyRank">내 순위 확인하기</button>
-          </div>
-
-          <div class="ev-panel ev-mini-list">
-            <h2 style="color: var(--secondary); margin-bottom: 16px">다가오는 미니 퀴즈</h2>
-            <div class="ev-mini-item">
-              <div class="ev-date-box ev-date-box--a">
-                <span>15</span>
-                <span>MAY</span>
-              </div>
-              <div>
-                <p style="margin: 0; font-family: var(--font-label); font-weight: 600">
-                  물 속성 포켓몬 도감 퀴즈
-                </p>
-                <p style="margin: 4px 0 0; font-size: 12px; color: #80765f">
-                  오후 3:00 시작 · 보상: 블루 배지
-                </p>
-              </div>
-            </div>
-            <div class="ev-mini-item">
-              <div class="ev-date-box ev-date-box--b">
-                <span>16</span>
-                <span>MAY</span>
-              </div>
-              <div>
-                <p style="margin: 0; font-family: var(--font-label); font-weight: 600">
-                  전설의 포켓몬을 맞춰라!
-                </p>
-                <p style="margin: 4px 0 0; font-size: 12px; color: #80765f">
-                  오후 6:00 시작 · 보상: 마스터 볼 에코백
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="ev-panel ev-stats-card">
-            <p class="ev-stats-label">나의 퀴즈 기록</p>
-            <h3>포켓몬 마스터</h3>
-            <div class="ev-progress-row">
-              <span>정답률 85%</span>
-              <span>Level 25</span>
-            </div>
-            <div class="ev-progress-bar">
-              <div class="ev-progress-fill"></div>
-            </div>
-            <span class="material-symbols-outlined ev-stats-icon">psychology</span>
-          </div>
-        </aside>
+    <main class="temi-scroll ev-layout-shell">
+      <div class="ev-atmosphere" aria-hidden="true">
+        <div class="ev-blob ev-blob--yellow"></div>
+        <div class="ev-blob ev-blob--blue"></div>
       </div>
+      <div class="ev-grid-12">
+          <!-- AI 포켓몬 가이드 -->
+          <section class="ev-col-guide" aria-labelledby="ai-guide-title">
+            <div class="ev-guide-panel">
+              <header class="ev-guide-head">
+                <div>
+                  <h1 id="ai-guide-title">AI 포켓몬 가이드</h1>
+                  <p>포켓몬에 대해 무엇이든 물어보세요!</p>
+                </div>
+                <div class="ev-guide-spark" aria-hidden="true">
+                  <span class="material-symbols-outlined">auto_awesome</span>
+                </div>
+              </header>
 
-      <footer class="ev-kiosk-footer">
-        <span>© 2026 Pokemon Exhibition</span>
-        <nav aria-label="바로가기">
-          <a href="guide.html">전시장 안내</a>
-          <a href="rally-qr.html">스탬프 랠리</a>
-        </nav>
-        <a class="ev-kiosk-home" href="index.html">
-          <span class="material-symbols-outlined">arrow_back</span>
-          메인으로
-        </a>
-      </footer>
+              <div class="ev-search-wrap">
+                <input
+                  type="text"
+                  id="pokedexQuery"
+                  class="ev-search-input"
+                  placeholder="예: 피카츄는 진화하면 뭐가 돼?"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+                <button type="button" class="ev-search-mic" id="btnMic" aria-label="음성 검색">
+                  <span class="material-symbols-outlined">mic</span>
+                </button>
+                <button type="button" class="ev-search-submit" id="btnPokedex" aria-label="검색">
+                  <span class="material-symbols-outlined">search</span>
+                </button>
+              </div>
+
+              <div class="ev-pokedex-card" id="pokedexCard">
+                <div class="ev-pokedex-glow" aria-hidden="true"></div>
+                <div class="ev-pokedex-inner">
+                  <div class="ev-pokedex-visual">
+                    <img
+                      id="pokedexImg"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxL_eFJgKR7SmhSqYb8fjrLUE-i7150AO-dC0BeEocGJbiU9iBAevgGYSUowkkj_9J7QZrRFTTsempVALaPElXjCz5SJH7UKgHN5bPht6BWjz4Xh2sgPg42A4n_CGa_I1Q-_1rW5MaHfU_RAoW77oUN40K-XAZynHJ8GrFnW7LrowoNFVP1-ydNMKKFEVTlT6VNeqDzJ65_k_stMmc--Qht1qyJiVvQpZ7nkhg2N0Fq3vMvrGkJHvy63plvF_ednINtbHCvd49GII"
+                      alt="피카츄"
+                    />
+                    <div class="ev-pokedex-num" id="pokedexNum">No. 025 피카츄</div>
+                  </div>
+                  <div class="ev-pokedex-info">
+                    <div class="ev-type-row" id="pokedexTypes"></div>
+                    <div class="ev-pokedex-answer" id="pokedexAnswer" hidden>
+                      <h4 class="ev-pokedex-answer-title">
+                        <span class="material-symbols-outlined">smart_toy</span>
+                        테미의 답변
+                      </h4>
+                      <p id="pokedexAnswerText"></p>
+                    </div>
+                    <p class="ev-pokedex-desc-label" id="pokedexDescLabel" hidden>도감 정보</p>
+                    <p class="ev-pokedex-desc" id="pokedexDesc">
+                      검색창에 포켓몬 이름이나 질문을 입력해 보세요.
+                    </p>
+                    <p class="ev-pokedex-err" id="pokedexErr" hidden></p>
+                    <div class="ev-matchup-grid">
+                      <div class="ev-matchup ev-matchup--strong">
+                        <h3>
+                          <span class="material-symbols-outlined">add_circle</span>
+                          유리한 상대
+                        </h3>
+                        <div class="ev-matchup-chips" id="pokedexStrong"></div>
+                      </div>
+                      <div class="ev-matchup ev-matchup--weak">
+                        <h3>
+                          <span class="material-symbols-outlined">remove_circle</span>
+                          약점
+                        </h3>
+                        <div class="ev-matchup-chips" id="pokedexWeak"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 이벤트 -->
+          <section class="ev-col-events" aria-label="추천 및 예정된 이벤트">
+            <div class="ev-best-match">
+              <span class="ev-best-deco material-symbols-outlined" aria-hidden="true">celebration</span>
+              <div class="ev-best-inner">
+                <div class="ev-best-badge">
+                  <span class="material-symbols-outlined">stars</span>
+                  AI 추천 베스트 매치
+                </div>
+                <h2 id="bestMatchTitle">이브이즈 가든 파티</h2>
+                <div class="ev-best-meta">
+                  <span>
+                    <span class="material-symbols-outlined">schedule</span>
+                    오후 3:00
+                  </span>
+                  <span>
+                    <span class="material-symbols-outlined">location_on</span>
+                    센트럴 가든
+                  </span>
+                </div>
+                <p class="ev-recommend-hint" id="recommendResult" aria-live="polite"></p>
+                <input type="hidden" id="eventInterests" value="" />
+                <input type="hidden" id="eventCompanion" value="" />
+                <button type="button" class="ev-btn-reserve" id="btnReserveBest" data-location="중앙 공원">
+                  지금 예약하기
+                </button>
+                <button type="button" class="ev-btn-recommend-ai" id="btnRecommend">
+                  Claude 맞춤 추천 받기
+                </button>
+              </div>
+            </div>
+
+            <div class="ev-upcoming-panel">
+              <header class="ev-upcoming-head">
+                <h2>추천 &amp; 예정된 이벤트</h2>
+                <button type="button" class="ev-link-more" id="btnShowAll">더보기 +</button>
+              </header>
+              <div class="ev-upcoming-list">
+                <article class="ev-upcoming-item" data-event="capture" data-location="사파리 존">
+                  <div class="ev-upcoming-thumb">
+                    <img
+                      src="images/pokemon-festival-2026.png"
+                      alt="2026 Pokemon Festival"
+                    />
+                  </div>
+                  <div class="ev-upcoming-body">
+                    <div>
+                      <h3>포켓몬 페스티벌 2026</h3>
+                      <p>POCKET ADVENTURE — 피카츄·이브이·꼬부기와 함께하는 메인 행사!</p>
+                    </div>
+                    <div class="ev-upcoming-foot">
+                      <span class="ev-upcoming-time">오후 2:00</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="ev-upcoming-item" data-event="catch" data-location="사파리 존">
+                  <div class="ev-upcoming-thumb">
+                    <img
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUHj3_iNkkg2JYNvYUJLbKFeGfNtzb1R5hsCfcR3kv66OXfbJ6ojt5dKo2oa2ZmFtz1S8CJSDMbc0RPstVNsV6RCUuGuFPDZoyefP_RqTEDtKKZ6QNGvTY4Jy0SNC6YOREZo3saUmNjknN3-UpPcQIRaMSgg6bs3hm3JHNU6iuvvYLwkPlUjyfQxPz-1V6FXI4LbBtTzW0KObDR3gy7xavMwj-XdSdg4KFnNWsrDCGzuMaE8DA0m7qzmXkqJNrXGZElWgjGAIMNBY"
+                      alt="포켓몬 잡기 대회"
+                    />
+                  </div>
+                  <div class="ev-upcoming-body">
+                    <div>
+                      <h3>포켓몬 잡기 대회</h3>
+                      <p>제한 시간 내에 가장 많은 포켓몬을 찾아보세요!</p>
+                    </div>
+                    <div class="ev-upcoming-foot">
+                      <span class="ev-upcoming-time">오후 4:30</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="ev-upcoming-item" data-event="mascot" data-location="센트럴 광장">
+                  <div class="ev-upcoming-thumb">
+                    <img
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIthcbqsJ5n7q-r1XQyorDXADmzBMq4gVUakJMOaAPD9sDLvH-KZ-9xriYWQkkNI-17VrcpzUiuvc9SzsupC4Yrunk7nx39rdp_zzhvpBtMxxqmvehKttcJ0CVqIl1oO30T5V4PriOLMXH1C689Eyop1Iz98mE8myv-scdcfQrTDwvy31II604W3xlX5DZh85jJ1CmEtaqcVkMFMvn7NI2E_BFDbP9oH_pTjL_ma3CVY_GUhZku90ptHuW6u7IXR35-ksNxkG9FFw"
+                      alt="마스코트 그리팅"
+                    />
+                  </div>
+                  <div class="ev-upcoming-body">
+                    <div>
+                      <h3>마스코트 그리팅</h3>
+                      <p>실제 크기 피카츄와 함께 기념사진을 찍으세요!</p>
+                    </div>
+                    <div class="ev-upcoming-foot">
+                      <span class="ev-upcoming-time">오후 5:15</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="ev-upcoming-item ev-upcoming-item--dim" data-event="battle" data-location="배틀 아레나">
+                  <div class="ev-upcoming-thumb">
+                    <img
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0dnzHjJeBMN5yARTbb6Ot704ouYIxR2wAERi67ljVFx1nkOvoYomSJlOLVnqzEhMEnm1RlGaW8Gd9d9VOK7J10jbelJsavDKGnld9Rynw69TLnODKp7OAMvZsYZp4QVyRse9Olx4AkBVC5bSWBpz8_Rp_Bh6Ftfe6DYzcGkI3GcXIN067OaWe0rScxb0dO0BmRhB5vCRkMSD-BZzSkh_POw84V6g-hJ1XqtV53uoK1RegLj7ttfENV1CuEf67FIPfVQlkEerussU"
+                      alt="AI 배틀 시뮬레이션"
+                    />
+                  </div>
+                  <div class="ev-upcoming-body">
+                    <div>
+                      <h3>AI 배틀 시뮬레이션</h3>
+                      <p>자신만의 전략으로 배틀에서 승리하세요.</p>
+                    </div>
+                    <div class="ev-upcoming-foot">
+                      <span class="ev-upcoming-time">오후 6:00</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div class="ev-daily-panel ev-daily-panel--qr" id="daily-challenge-kiosk">
+              <h2 class="ev-daily-title">
+                <span class="material-symbols-outlined">sports_esports</span>
+                일일 챌린지
+              </h2>
+              <p class="ev-daily-kiosk-note">
+                키오스크에서는 QR만 표시됩니다. 스마트폰으로 스캔해 앱에서 퀴즈·챌린지에 참여하세요.
+              </p>
+              <div class="ev-daily-qr-wrap">
+                <div class="ev-daily-qr-box">
+                  <div id="dailyChallengeQrHost" class="ev-daily-qr-host" aria-label="모바일 앱 접속 QR"></div>
+                </div>
+                <a
+                  class="ev-daily-qr-link"
+                  id="dailyChallengeQrLink"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >스마트폰 앱에서 열기</a
+                >
+              </div>
+            </div>
+          </section>
+      </div>
     </main>
 
     <script>
@@ -257,49 +288,281 @@
           }
         }
 
-        document.getElementById("btnStartQuiz").addEventListener("click", function () {
-          showToast("퀴즈 세션이 곧 시작됩니다! (MVP 데모)");
-          speak("포켓몬 퀴즈에 오신 것을 환영합니다. 준비되면 문제가 표시됩니다.");
+        function escapeHtml(s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function stripMarkdown(text) {
+          return String(text || "")
+            .replace(/\*\*([^*]+)\*\*/g, "$1")
+            .replace(/\*([^*]+)\*/g, "$1")
+            .replace(/`([^`]+)`/g, "$1")
+            .replace(/^#+\s*/gm, "")
+            .replace(/^[-*]\s+/gm, "")
+            .trim();
+        }
+
+        function formatAiText(text) {
+          var plain = stripMarkdown(text);
+          return "<p>" + escapeHtml(plain).replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>") + "</p>";
+        }
+
+        var TYPE_META = {
+          전기: { slug: "electric", icon: "bolt" },
+          물: { slug: "water", icon: "water_drop" },
+          불꽃: { slug: "fire", icon: "local_fire_department" },
+          풀: { slug: "grass", icon: "eco" },
+          땅: { slug: "ground", icon: "terrain" },
+          비행: { slug: "fly", icon: "air" },
+          얼음: { slug: "ice", icon: "ac_unit" },
+          에스퍼: { slug: "psychic", icon: "psychology" },
+          격투: { slug: "fighting", icon: "sports_martial_arts" },
+          독: { slug: "poison", icon: "science" },
+          바위: { slug: "rock", icon: "landscape" },
+          벌레: { slug: "bug", icon: "bug_report" },
+          고스트: { slug: "ghost", icon: "visibility_off" },
+          드래곤: { slug: "dragon", icon: "cruelty_free" },
+          악: { slug: "dark", icon: "dark_mode" },
+          강철: { slug: "steel", icon: "hardware" },
+          페어리: { slug: "fairy", icon: "auto_awesome" },
+          노말: { slug: "normal", icon: "circle" },
+        };
+
+        function typeMeta(name) {
+          var key = String(name || "").replace(/타입$/g, "").trim();
+          return TYPE_META[key] || { slug: "normal", icon: "category" };
+        }
+
+        function renderTypeChips(container, types, category) {
+          if (!container) return;
+          container.innerHTML = "";
+          (types || []).forEach(function (t) {
+            var m = typeMeta(t);
+            var chip = document.createElement("span");
+            chip.className = "ev-type-chip ev-type-chip--" + m.slug;
+            chip.textContent = t.indexOf("타입") >= 0 ? t : t + " 타입";
+            container.appendChild(chip);
+          });
+          if (category) {
+            var cat = document.createElement("span");
+            cat.className = "ev-type-chip ev-type-chip--category";
+            cat.textContent = category;
+            container.appendChild(cat);
+          }
+        }
+
+        function renderMatchChips(container, types) {
+          if (!container) return;
+          container.innerHTML = "";
+          if (!types || !types.length) {
+            container.innerHTML = "<span class=\"ev-match-empty\">정보 없음</span>";
+            return;
+          }
+          types.forEach(function (t) {
+            var m = typeMeta(t);
+            var chip = document.createElement("span");
+            chip.className = "ev-match-chip ev-match-chip--" + m.slug;
+            chip.innerHTML =
+              '<span class="material-symbols-outlined">' +
+              m.icon +
+              "</span>" +
+              escapeHtml(t.indexOf("타입") >= 0 ? t : t + " 타입");
+            container.appendChild(chip);
+          });
+        }
+
+        function renderPokedex(entry) {
+          var numEl = document.getElementById("pokedexNum");
+          var img = document.getElementById("pokedexImg");
+          var desc = document.getElementById("pokedexDesc");
+          var descLabel = document.getElementById("pokedexDescLabel");
+          var answerBox = document.getElementById("pokedexAnswer");
+          var answerText = document.getElementById("pokedexAnswerText");
+          var err = document.getElementById("pokedexErr");
+          if (err) {
+            err.hidden = true;
+            err.textContent = "";
+          }
+          if (numEl) {
+            var num = entry.number > 0 ? String(entry.number).padStart(3, "0") : "???";
+            numEl.textContent = "No. " + num + " " + (entry.name || "");
+          }
+          if (img) {
+            img.alt = entry.name || "포켓몬";
+            img.src = entry.imageUrl || "";
+            img.onerror = function () {
+              this.onerror = null;
+              this.src = "images/pokemon-festival-2026.png";
+            };
+          }
+          renderTypeChips(
+            document.getElementById("pokedexTypes"),
+            entry.types || [],
+            entry.category || ""
+          );
+          var answer = stripMarkdown(entry.queryAnswer || "");
+          if (answerBox && answerText) {
+            if (answer) {
+              answerBox.hidden = false;
+              answerText.textContent = answer;
+            } else {
+              answerBox.hidden = true;
+              answerText.textContent = "";
+            }
+          }
+          if (descLabel) descLabel.hidden = false;
+          if (desc) {
+            desc.style.display = "";
+            desc.textContent = stripMarkdown(entry.description || "");
+          }
+          renderMatchChips(document.getElementById("pokedexStrong"), entry.strongAgainst || []);
+          renderMatchChips(document.getElementById("pokedexWeak"), entry.weakAgainst || []);
+        }
+
+        function setAiResult(el, html, loading) {
+          if (!el) return;
+          el.classList.toggle("is-loading", !!loading);
+          el.classList.toggle("has-content", !!html && !loading);
+          el.innerHTML = loading ? "<p>Claude가 답변을 준비 중이에요…</p>" : html;
+        }
+
+        async function callAi(path, body) {
+          var res = await fetch(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          var data = {};
+          try {
+            data = await res.json();
+          } catch (e) {
+            data = {};
+          }
+          if (!res.ok) {
+            // #region agent log
+            fetch("http://127.0.0.1:7550/ingest/383bf961-c6f9-4c2a-8533-c536b3053fe5", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "351488" },
+              body: JSON.stringify({
+                sessionId: "351488",
+                hypothesisId: "C",
+                location: "events.html:callAi",
+                message: "api_error_response",
+                data: { path: path, status: res.status, error: data.error || "" },
+                timestamp: Date.now(),
+              }),
+            }).catch(function () {});
+            // #endregion
+            throw new Error(data.error || "요청 실패 (" + res.status + ")");
+          }
+          return data;
+        }
+
+        function runPokedexSearch() {
+          var q = (document.getElementById("pokedexQuery").value || "").trim();
+          var err = document.getElementById("pokedexErr");
+          var desc = document.getElementById("pokedexDesc");
+          var card = document.getElementById("pokedexCard");
+          if (!q) {
+            if (err) {
+              err.hidden = false;
+              err.textContent = "이름 또는 번호를 입력해 주세요.";
+            }
+            return;
+          }
+          if (card) card.classList.add("is-loading");
+          if (desc) desc.textContent = "테미가 도감을 분석 중이에요…";
+          if (err) err.hidden = true;
+          callAi("/api/ai/pokedex", { query: q })
+            .then(function (entry) {
+              renderPokedex(entry);
+              var speakText = stripMarkdown(entry.queryAnswer || entry.description || "").slice(0, 120);
+              speak(speakText);
+            })
+            .catch(function (e) {
+              if (err) {
+                err.hidden = false;
+                err.textContent = e.message || "도감 검색 실패";
+              }
+              if (desc) desc.textContent = "다시 검색해 주세요.";
+            })
+            .finally(function () {
+              if (card) card.classList.remove("is-loading");
+            });
+        }
+
+        document.getElementById("btnPokedex").addEventListener("click", runPokedexSearch);
+        document.getElementById("pokedexQuery").addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            runPokedexSearch();
+          }
         });
 
-        document.getElementById("btnMyRank").addEventListener("click", function () {
-          showToast("키오스크에서는 순위 확인 데모만 제공됩니다.");
+        document.getElementById("btnRecommend").addEventListener("click", async function () {
+          var out = document.getElementById("recommendResult");
+          setAiResult(out, "", true);
+          try {
+            var data = await callAi("/api/ai/events/recommend", {
+              interests: (document.getElementById("eventInterests").value || "").trim(),
+              companion: (document.getElementById("eventCompanion").value || "").trim(),
+            });
+            setAiResult(out, formatAiText(data.text || ""));
+          } catch (err) {
+            setAiResult(out, "<p class='ev-ai-err'>" + escapeHtml(err.message) + "</p>");
+          }
+        });
+
+        document.getElementById("btnReserveBest").addEventListener("click", function () {
+          var loc = this.getAttribute("data-location") || "센트럴 가든";
+          if (
+            window.TemiBridge &&
+            window.TemiBridge.isAvailable() &&
+            window.TemiBridge.goto(loc)
+          ) {
+            showToast("이브이즈 가든 파티 — " + loc + "으로 안내합니다.");
+            return;
+          }
+          showToast("이브이즈 가든 파티 예약이 접수되었습니다. (데모)");
+          speak("이브이즈 가든 파티. " + loc + "에서 만나요.");
+        });
+
+        document.getElementById("btnMic").addEventListener("click", function () {
+          showToast("음성 검색은 준비 중입니다. 키보드로 검색해 주세요.");
         });
 
         document.getElementById("btnShowAll").addEventListener("click", function () {
-          var col = document.querySelector(".ev-main-col");
-          if (col) col.scrollTo({ top: 0, behavior: "smooth" });
+          var list = document.querySelector(".ev-upcoming-list");
+          if (list) list.scrollTo({ top: 0, behavior: "smooth" });
         });
 
         document.getElementById("btnNotify").addEventListener("click", function () {
           showToast("새 이벤트 알림이 없습니다.");
         });
 
-        document.querySelectorAll("[data-join]").forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            var card = btn.closest(".ev-card");
-            var title = card ? card.querySelector("h3").textContent : "이벤트";
-            var loc = card ? card.getAttribute("data-location") : "";
-            if (
-              loc &&
-              window.TemiBridge &&
-              window.TemiBridge.isAvailable() &&
-              window.TemiBridge.goto(loc)
-            ) {
-              showToast(title + " — " + loc + "으로 안내합니다.");
-              return;
-            }
-            showToast(title + " 참가 신청이 접수되었습니다. (데모)");
-            if (loc) speak(title + ". " + loc + "에서 만나요.");
-          });
-        });
+        function getMobileAppEventsUrl() {
+          var host = location.hostname;
+          if (host === "localhost" || host === "127.0.0.1") {
+            return "http://" + host + ":5173/mobile/app/events";
+          }
+          return location.origin + "/mobile/app/events";
+        }
 
-        document.querySelectorAll("[data-toast]").forEach(function (el) {
-          el.addEventListener("click", function (e) {
-            e.preventDefault();
-            showToast(el.getAttribute("data-toast"));
-          });
-        });
+        function renderDailyChallengeQr() {
+          var url = getMobileAppEventsUrl();
+          var host = document.getElementById("dailyChallengeQrHost");
+          var link = document.getElementById("dailyChallengeQrLink");
+          if (link) link.href = url;
+          if (!host || !window.QRCode) return;
+          host.innerHTML = "";
+          new QRCode(host, { text: url, width: 200, height: 200 });
+        }
+
+        window.addEventListener("load", renderDailyChallengeQr);
 
         window.addEventListener("temi:nav", function (ev) {
           var d = (ev && ev.detail) || {};

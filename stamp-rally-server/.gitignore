@@ -2,3 +2,8 @@ target/
 .idea/
 *.iml
 .DS_Store
+
+# Anthropic API key (use .env.example as template)
+.env
+.env.*
+!.env.example

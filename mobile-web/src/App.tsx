@@ -7,6 +7,7 @@ import PhotoReceivePage from './pages/PhotoReceivePage'
 import ProfilePage from './pages/ProfilePage'
 import ScanPage from './pages/ScanPage'
 import StampRallyPage from './pages/StampRallyPage'
+import EventsPage from './pages/EventsPage'
 import RequireSession from './components/RequireSession'
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
           }
         />
         <Route path="/camera" element={<CameraPage />} />
+        <Route path="/events" element={<EventsPage />} />
         <Route path="/photo/receive" element={<PhotoReceivePage />} />
         <Route
           path="/rally"

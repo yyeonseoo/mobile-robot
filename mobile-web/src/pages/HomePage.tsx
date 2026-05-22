@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { authHeaders, jsonFetch } from '../lib/api'
 import { getVisitorToken } from '../lib/storage'
@@ -99,21 +100,9 @@ export default function HomePage() {
 
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
-      <header className="bg-yellow-400 dark:bg-yellow-600 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl">
-        <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
-          POKÉGUIDE
-        </h1>
-        <div className="flex items-center gap-4">
-          <span
-            className="material-symbols-outlined text-3xl text-slate-900 dark:text-white"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            capture
-          </span>
-        </div>
-      </header>
+      <AppHeader variant="home" />
 
-      <main className="pt-24 px-gutter max-w-2xl mx-auto space-y-gutter">
+      <main className={`${APP_HEADER_MAIN_PT} px-gutter max-w-2xl mx-auto space-y-gutter`}>
         <section className="relative bg-primary-container rounded-lg p-base overflow-hidden neomorph-card border-8 border-white">
           <div className="relative z-10 p-md flex flex-col items-center text-center gap-sm">
             <div className="bg-white/90 backdrop-blur px-sm py-xs rounded-full inline-flex items-center gap-xs">
@@ -177,12 +166,15 @@ export default function HomePage() {
             <span className="font-headline-md text-headline-md text-on-surface">포켓캠</span>
           </Link>
 
-          <button className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group">
+          <Link
+            to="/events"
+            className="flex flex-col items-center justify-center bg-white border-8 border-white rounded-lg p-lg neomorph-card hover:scale-105 active:scale-95 transition-all text-center group"
+          >
             <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform shadow-[0_6px_0_0_#930004]">
               <span className="material-symbols-outlined text-5xl text-white">celebration</span>
             </div>
-            <span className="font-headline-md text-headline-md text-on-surface">이벤트</span>
-          </button>
+            <span className="font-headline-md text-headline-md text-on-surface">이벤트 AI</span>
+          </Link>
         </section>
 
         <Link
