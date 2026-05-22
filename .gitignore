@@ -20,6 +20,11 @@ dist-ssr/
 *.log
 logs/
 
+### Secrets (API keys — never commit)
+.env
+.env.*
+!.env.example
+
 ### Java / Maven
 **/target/
 

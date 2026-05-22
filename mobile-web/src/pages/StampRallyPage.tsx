@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { authHeaders, jsonFetch } from '../lib/api'
 
@@ -109,24 +110,35 @@ export default function StampRallyPage() {
 
   return (
     <div className="bg-background font-body-md text-on-background min-h-screen pb-32">
-      <header className="sticky top-0 z-40 bg-yellow-400 dark:bg-yellow-600 shadow-xl border-b-4 border-yellow-600/30 px-6 py-4 flex justify-between items-center w-full">
-        <h1 className="font-plus-jakarta font-black tracking-tight text-lg text-slate-900 dark:text-white">
-          POKÉGUIDE
-        </h1>
-        <span
-          className="material-symbols-outlined text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          capture
-        </span>
-      </header>
+      <AppHeader />
 
-      <main className="px-margin pt-sm space-y-gutter max-w-2xl mx-auto">
+      <main className={`px-margin ${APP_HEADER_MAIN_PT} space-y-gutter max-w-2xl mx-auto`}>
         <section className="text-center space-y-xs pt-base">
           <h2 className="font-display-lg text-display-lg text-primary">모두 모아보자!</h2>
           <p className="font-body-md text-body-md text-on-surface-variant px-md">
             포켓몬 센터를 방문하고 디지털 스탬프 북을 채워보세요!
           </p>
+        </section>
+
+        <section className="flex flex-col items-center py-sm">
+          <button
+            type="button"
+            onClick={() => nav('/scan')}
+            className="relative flex flex-col items-center group active:scale-95 transition-transform duration-100"
+          >
+            <div
+              className="w-24 h-24 rounded-full border-4 border-slate-900 overflow-hidden shadow-[0_8px_0_0_rgba(0,0,0,1)] flex flex-col relative"
+              style={{ background: 'linear-gradient(to bottom, #e90d11 50%, #ffffff 50%)' }}
+            >
+              <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-900 -translate-y-1/2" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-4 border-slate-900 bg-white flex items-center justify-center z-10">
+                <div className="w-3 h-3 rounded-full border-2 border-slate-900" />
+              </div>
+            </div>
+            <span className="mt-base block font-headline-md text-headline-md text-secondary uppercase tracking-widest text-center">
+              QR 스캔하기
+            </span>
+          </button>
         </section>
 
         <section className="bg-surface-container-lowest rounded-lg p-md neumorphic-shadow border-4 border-surface-variant relative overflow-hidden">
@@ -224,27 +236,6 @@ export default function StampRallyPage() {
               <span className="font-label-bold text-label-bold text-outline">잠김</span>
             </div>
           </div>
-        </section>
-
-        <section className="flex flex-col items-center pt-md pb-sm">
-          <button
-            type="button"
-            onClick={() => nav('/scan')}
-            className="relative flex flex-col items-center group active:scale-95 transition-transform duration-100"
-          >
-            <div
-              className="w-24 h-24 rounded-full border-4 border-slate-900 overflow-hidden shadow-[0_8px_0_0_rgba(0,0,0,1)] flex flex-col relative"
-              style={{ background: 'linear-gradient(to bottom, #e90d11 50%, #ffffff 50%)' }}
-            >
-              <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-900 -translate-y-1/2" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-4 border-slate-900 bg-white flex items-center justify-center z-10">
-                <div className="w-3 h-3 rounded-full border-2 border-slate-900" />
-              </div>
-            </div>
-            <span className="mt-base block font-headline-md text-headline-md text-secondary uppercase tracking-widest text-center">
-              QR 스캔하기
-            </span>
-          </button>
         </section>
       </main>
 

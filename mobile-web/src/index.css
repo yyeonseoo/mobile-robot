@@ -22,6 +22,13 @@
   --color-tertiary: #3f50ce;
   --color-tertiary-container: #caceff;
   --color-on-tertiary-container: #3a4bc9;
+  --color-on-tertiary-fixed: #000b62;
+  --color-tertiary-fixed: #dfe0ff;
+  --color-tertiary-fixed-dim: #bcc2ff;
+  --color-secondary-fixed: #ffdad5;
+  --color-on-secondary-fixed: #410001;
+  --color-primary-fixed: #ffe08d;
+  --color-on-primary-fixed-variant: #584400;
   --color-outline: #80765f;
   --color-outline-variant: #d2c5ab;
 
@@ -141,6 +148,19 @@ body {
 /* Camera page effects */
 .pokemon-card-shadow {
   box-shadow: 0 8px 0 0 rgba(0, 0, 0, 0.05);
+}
+
+.toy-card {
+  box-shadow: 0 8px 0 0 rgba(0, 0, 0, 0.05);
+}
+
+.neomorph-button {
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.neomorph-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.1);
 }
 
 .pokeball-inner {

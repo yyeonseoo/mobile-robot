@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { jsonFetch } from '../lib/api'
 
@@ -91,23 +92,9 @@ export default function MapPage() {
 
   return (
     <div className="bg-background font-body-md text-on-background min-h-screen pb-32 selection:bg-primary-container">
-      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="홈으로">
-            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
-          </Link>
-          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
-            POKÉGUIDE
-          </h1>
-        </div>
-        <div className="text-2xl font-black italic text-slate-900 dark:text-white tracking-tighter">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-            capture
-          </span>
-        </div>
-      </header>
+      <AppHeader />
 
-      <main className="pt-24 pb-32 px-margin max-w-4xl mx-auto min-h-screen space-y-gutter">
+      <main className={`${APP_HEADER_MAIN_PT} pb-32 px-margin max-w-4xl mx-auto min-h-screen space-y-gutter`}>
         <div className="mb-lg text-center">
           <h2 className="font-display-lg text-display-lg text-primary mb-xs">나의 길 찾기</h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
@@ -246,65 +233,25 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter">
-          <button className="col-span-2 bg-primary-container rounded-lg p-6 flex items-center justify-between toy-button-shadow border-2 border-primary/20 hover:opacity-90 transition-all">
-            <div className="text-left">
-              <p className="font-label-bold text-on-primary-fixed-variant uppercase text-xs tracking-wider mb-1">
-                길을 잃으셨나요? 파트너를 부르세요!
-              </p>
-              <h3 className="font-headline-md text-headline-md text-on-primary-fixed">
-                피카츄 부르기
-              </h3>
-            </div>
-            <div className="w-16 h-16 bg-white/40 rounded-full flex items-center justify-center">
-              <span
-                className="material-symbols-outlined text-4xl text-on-primary-fixed"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                bolt
-              </span>
-            </div>
-          </button>
-
-          <div className="bg-tertiary-container rounded-lg p-6 flex flex-col justify-center neomorphic-card">
-            <p className="font-label-bold text-on-tertiary-container text-xs uppercase mb-1">거리</p>
-            <p className="font-headline-md text-headline-md text-tertiary">1.2 KM</p>
+        <button
+          type="button"
+          className="w-full bg-primary-container rounded-lg p-6 flex items-center justify-between toy-button-shadow border-2 border-primary/20 hover:opacity-90 transition-all"
+        >
+          <div className="text-left">
+            <p className="font-label-bold text-on-primary-fixed-variant uppercase text-xs tracking-wider mb-1">
+              길을 잃으셨나요? 파트너를 부르세요!
+            </p>
+            <h3 className="font-headline-md text-headline-md text-on-primary-fixed">테미 부르기</h3>
           </div>
-          <div className="bg-surface-container-highest rounded-lg p-6 flex flex-col justify-center neomorphic-card">
-            <p className="font-label-bold text-on-surface-variant text-xs uppercase mb-1">시간</p>
-            <p className="font-headline-md text-headline-md text-on-surface">15분</p>
+          <div className="w-16 h-16 bg-white/40 rounded-full flex items-center justify-center">
+            <span
+              className="material-symbols-outlined text-4xl text-on-primary-fixed"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              bolt
+            </span>
           </div>
-        </div>
-
-        <div className="mt-lg grid grid-cols-1 md:grid-cols-2 gap-gutter">
-          <div className="bg-white rounded-lg p-sm flex items-center gap-sm neomorphic-card">
-            <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 border-2 border-surface-variant">
-              <img
-                className="w-full h-full object-cover"
-                alt="숨겨진 길"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUZ23_bb8ZZY0q7pcJoXcb3ldeHV6TVrSR1eeynHovC1itBVph8tZdpbd3iACYoXTvLxLtuaj8aFw6w-HHPrfBDAsCA8LtJ-t87bbzYV5eMZExQYFKXgkFd9TIU3kkfnF1CtpJmKv_U3yRR7zSGoLXtEHCY3SVyxpGB8jvdW2QVvYBS_QDBU-wz4I3pR03JJUWl_1Vz8fNt2j15x7NHYvBoQoja6QXTfHfxIa87kbQZgWBt7K50y1m-6x1nI71dZmDoddQA7c4IqQ"
-              />
-            </div>
-            <div>
-              <h4 className="font-headline-md text-body-lg text-primary">숨겨진 길</h4>
-              <p className="text-on-surface-variant text-sm">상록숲에서 지름길이 발견되었습니다!</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-sm flex items-center gap-sm neomorphic-card">
-            <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 border-2 border-surface-variant">
-              <img
-                className="w-full h-full object-cover"
-                alt="아이템 가방"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDtb2yx2URgKbIyK3fphFAT2QtCdr10HiSzJCdU4b2_pbCPwh2bP_-09tqPX0n-Fo1SOZNjse28aHVycY_DbZMowUKldcEg0We_kxSEkxjG7ZP4Xvbrk-9f9Wvs_n_ziZ1xt20pD7vEZLAC2HpI4WD8yDNA45YwfrawDhgACNqTIOXEnhlu8QPldWHqYhut3BnwayfxmWtY1if5cd-TqZr3IeN6HEpfic2mrFg0EP9z7h6kgV_WH9YyPgArV3hhXP6eVVETVcMBLo"
-              />
-            </div>
-            <div>
-              <h4 className="font-headline-md text-body-lg text-primary">아이템 가방</h4>
-              <p className="text-on-surface-variant text-sm">상처약 챙기는 거 잊지 마세요!</p>
-            </div>
-          </div>
-        </div>
+        </button>
       </main>
 
       <BottomNav />

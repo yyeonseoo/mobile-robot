@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { jsonFetch } from '../lib/api'
 import { pathFromNextKey } from '../lib/sessionRoutes'
 import { getNickname, getVisitorToken, setNickname, setVisitorToken } from '../lib/storage'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 
 type CreateSessionResponse = {
@@ -48,19 +49,9 @@ export default function EnterPage() {
 
   return (
     <div className="bg-background pokeball-bg min-h-screen font-body-md text-on-background pb-32">
-      <header className="bg-yellow-400 dark:bg-yellow-600 flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl">
-        <h1 className="text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']">
-          POKÉGUIDE
-        </h1>
-        <span
-          className="material-symbols-outlined text-3xl text-slate-900 dark:text-white"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          capture
-        </span>
-      </header>
+      <AppHeader />
 
-      <main className="pt-24 px-gutter max-w-2xl mx-auto space-y-gutter">
+      <main className={`${APP_HEADER_MAIN_PT} px-gutter max-w-2xl mx-auto space-y-gutter`}>
         <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
           <h2 className="font-headline-md text-headline-md text-on-surface">입장</h2>
           <p className="text-on-surface-variant text-sm">

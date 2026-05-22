@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 
 const FILTER_BASE = `${import.meta.env.BASE_URL}filters/`
@@ -310,24 +311,9 @@ export default function CameraPage() {
 
   return (
     <div className="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden pb-64">
-      <header className="bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link className="active:translate-y-0.5 transition-transform hover:opacity-80" to="/" aria-label="뒤로">
-            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
-          </Link>
-          <h1 className="font-plus-jakarta font-black tracking-tight text-lg uppercase text-slate-900 dark:text-white font-headline-md text-headline-md">
-            POKEGUIDE
-          </h1>
-        </div>
-        <span
-          className="material-symbols-outlined text-2xl text-slate-900 dark:text-white"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          capture
-        </span>
-      </header>
+      <AppHeader />
 
-      <main className="mx-auto w-full max-w-[430px] px-4 py-lg pb-64">
+      <main className={`mx-auto w-full max-w-[430px] px-4 ${APP_HEADER_MAIN_PT} pb-64`}>
         <div className="text-center mb-lg">
           <h2 className="font-display-lg text-[34px] leading-tight text-primary mb-xs">인생네컷 찍기!</h2>
           <p className="text-on-surface-variant text-sm leading-relaxed">

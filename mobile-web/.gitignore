@@ -7,6 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# API keys belong in stamp-rally-server/.env only
+.env
+.env.*
+
 node_modules
 dist
 dist-ssr
