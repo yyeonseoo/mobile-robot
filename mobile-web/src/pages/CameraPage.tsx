@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 
@@ -74,9 +74,17 @@ function loadImage(src: string) {
   })
 }
 
+function isAbortPlayError(e: unknown): boolean {
+  return e instanceof DOMException && e.name === 'AbortError'
+}
+
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const cameraEpochRef = useRef(0)
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [liveOverlay, setLiveOverlay] = useState({ top: 0, height: 0, width: 0 })
   const completedStripRef = useRef('')
   const [err, setErr] = useState(() =>
     typeof navigator !== 'undefined' && !navigator.mediaDevices?.getUserMedia
@@ -102,6 +110,8 @@ export default function CameraPage() {
     return idx < 0 ? 0 : idx
   }, [shots])
 
+  const showLivePreview = shots[nextShotIndex] === null
+
   const selectedFilterChoice = useMemo(
     () => filterChoices.find((filter) => filter.id === selectedFilter) || filterChoices[0],
     [filterChoices, selectedFilter]
@@ -110,6 +120,20 @@ export default function CameraPage() {
   const overlayImg = 'img' in selectedFilterChoice ? selectedFilterChoice.img : ''
   const showFallbackOverlay =
     selectedFilter !== 'none' && (!overlayImg || missingFilters[selectedFilter])
+
+  useLayoutEffect(() => {
+    if (!showLivePreview) return
+    const frame = frameRef.current
+    const slot = slotRefs.current[nextShotIndex]
+    if (!frame || !slot) return
+    const fr = frame.getBoundingClientRect()
+    const sr = slot.getBoundingClientRect()
+    setLiveOverlay({
+      top: sr.top - fr.top,
+      height: sr.height,
+      width: sr.width,
+    })
+  }, [showLivePreview, nextShotIndex, shots, selectedFilter, overlayImg])
 
   function selectFilter(id: string) {
     setMissingFilters((prev) => {
@@ -123,12 +147,15 @@ export default function CameraPage() {
 
   const attachVideo = useCallback((node: HTMLVideoElement | null) => {
     videoRef.current = node
-    if (!node || !streamRef.current) return
-    node.srcObject = streamRef.current
-    void node.play().catch(() => {})
+    const stream = streamRef.current
+    if (!node || !stream) return
+    if (node.srcObject !== stream) {
+      node.srcObject = stream
+    }
   }, [])
 
   async function startCamera(nextFacing: 'user' | 'environment') {
+    const epoch = ++cameraEpochRef.current
     setErr('')
     try {
       if (streamRef.current) {
@@ -139,13 +166,19 @@ export default function CameraPage() {
         video: { facingMode: { ideal: nextFacing } },
         audio: false,
       })
+      if (epoch !== cameraEpochRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
+      const video = videoRef.current
+      if (video && video.srcObject !== stream) {
+        video.srcObject = stream
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : '카메라를 열 수 없습니다.')
+      if (!isAbortPlayError(e)) {
+        setErr(e instanceof Error ? e.message : '카메라를 열 수 없습니다.')
+      }
     }
   }
 
@@ -214,8 +247,12 @@ export default function CameraPage() {
     if (!navigator.mediaDevices?.getUserMedia) return
     void Promise.resolve().then(() => startCamera('user'))
     return () => {
+      cameraEpochRef.current += 1
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
+      if (videoRef.current) {
+        videoRef.current.srcObject = null
+      }
     }
   }, [])
 
@@ -305,49 +342,61 @@ export default function CameraPage() {
         ) : null}
 
         <section className="flex flex-col items-center">
-          <div className="four-cut-frame rounded-xl p-4 w-full max-w-[320px] shadow-2xl flex flex-col gap-3 pokemon-card-shadow">
-            {shots.map((shot, idx) => {
-              const showLive = !shot && idx === nextShotIndex
-              return (
-                <div
-                  key={idx}
-                  className="relative aspect-[4/3] bg-slate-200 overflow-hidden rounded-sm border-2 border-primary/20"
-                >
-                  {shot ? (
-                    <img src={shot} alt={`컷 ${idx + 1}`} className="w-full h-full object-cover" />
-                  ) : showLive ? (
-                    <>
-                      <video
-                        ref={attachVideo}
-                        className="w-full h-full object-cover"
-                        playsInline
-                        muted
-                        autoPlay
-                      />
-                      {showFallbackOverlay ? (
-                        <div className="pointer-events-none absolute inset-0">
-                          <div className="absolute left-0 right-0 top-[8%] h-[8%] bg-slate-950/90" />
-                          <div className="absolute left-0 right-0 bottom-[8%] h-[8%] bg-slate-950/90" />
-                          <div className="absolute left-[10%] top-[20%] h-12 w-12 rounded-full bg-emerald-300/80" />
-                          <div className="absolute right-[12%] bottom-[20%] h-14 w-14 rounded-full bg-orange-300/80" />
-                        </div>
-                      ) : overlayImg ? (
-                        <img
-                          src={overlayImg}
-                          alt=""
-                          className="pointer-events-none absolute inset-0 h-full w-full object-fill"
-                          onError={() => setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))}
-                        />
-                      ) : null}
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-white/50 flex items-center justify-center border-2 border-primary/10">
-                      <span className="material-symbols-outlined text-primary/30 text-4xl">photo_camera</span>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+          <div
+            ref={frameRef}
+            className="four-cut-frame relative rounded-xl p-4 w-full max-w-[320px] shadow-2xl flex flex-col gap-3 pokemon-card-shadow"
+          >
+            {shots.map((shot, idx) => (
+              <div
+                key={idx}
+                ref={(el) => {
+                  slotRefs.current[idx] = el
+                }}
+                className="relative aspect-[4/3] bg-slate-200 overflow-hidden rounded-sm border-2 border-primary/20"
+              >
+                {shot ? (
+                  <img src={shot} alt={`컷 ${idx + 1}`} className="w-full h-full object-cover" />
+                ) : idx !== nextShotIndex ? (
+                  <div className="w-full h-full bg-white/50 flex items-center justify-center border-2 border-primary/10">
+                    <span className="material-symbols-outlined text-primary/30 text-4xl">photo_camera</span>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+
+            {showLivePreview ? (
+              <div
+                className="pointer-events-none absolute left-4 overflow-hidden rounded-sm border-2 border-primary/20 z-10"
+                style={{
+                  top: liveOverlay.top,
+                  width: liveOverlay.width || 'calc(100% - 2rem)',
+                  height: liveOverlay.height || undefined,
+                }}
+              >
+                <video
+                  ref={attachVideo}
+                  className="h-full w-full object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                {showFallbackOverlay ? (
+                  <div className="absolute inset-0">
+                    <div className="absolute left-0 right-0 top-[8%] h-[8%] bg-slate-950/90" />
+                    <div className="absolute left-0 right-0 bottom-[8%] h-[8%] bg-slate-950/90" />
+                    <div className="absolute left-[10%] top-[20%] h-12 w-12 rounded-full bg-emerald-300/80" />
+                    <div className="absolute right-[12%] bottom-[20%] h-14 w-14 rounded-full bg-orange-300/80" />
+                  </div>
+                ) : overlayImg ? (
+                  <img
+                    src={overlayImg}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-fill"
+                    onError={() => setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))}
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="flex justify-between items-center px-1 pt-1">
               <span className="text-primary font-black text-xs">POKEGUIDE PHOTO</span>
