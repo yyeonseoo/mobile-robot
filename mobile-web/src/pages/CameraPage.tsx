@@ -6,35 +6,7 @@ const FILTER_BASE = `${import.meta.env.BASE_URL}filters/`
 
 type FilterChoice =
   | { id: 'none'; label: string; icon: string }
-  | { id: 'filter-1' | 'filter-2'; label: string; img: string }
-
-function drawCoverImage(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  sourceWidth: number,
-  sourceHeight: number,
-  x: number,
-  y: number,
-  width: number,
-  height: number
-) {
-  const sourceRatio = sourceWidth / sourceHeight
-  const targetRatio = width / height
-  let drawWidth = width
-  let drawHeight = height
-  let drawX = x
-  let drawY = y
-
-  if (sourceRatio > targetRatio) {
-    drawWidth = height * sourceRatio
-    drawX = x + (width - drawWidth) / 2
-  } else {
-    drawHeight = width / sourceRatio
-    drawY = y + (height - drawHeight) / 2
-  }
-
-  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight)
-}
+  | { id: 'filter-1' | 'filter-2' | 'filter-3'; label: string; img: string }
 
 function drawFallbackOverlay(
   ctx: CanvasRenderingContext2D,
@@ -49,19 +21,25 @@ function drawFallbackOverlay(
   ctx.fillRect(0, height * 0.08, width, height * 0.08)
   ctx.fillRect(0, height * 0.84, width, height * 0.08)
 
-  ctx.fillStyle = filterId === 'filter-1' ? '#81c784' : '#9575cd'
+  ctx.fillStyle =
+    filterId === 'filter-1' ? '#81c784' : filterId === 'filter-2' ? '#9575cd' : '#64b5f6'
   ctx.beginPath()
   ctx.arc(width * 0.18, height * 0.26, width * 0.1, 0, Math.PI * 2)
   ctx.fill()
 
-  ctx.fillStyle = filterId === 'filter-1' ? '#ffb74d' : '#f48fb1'
+  ctx.fillStyle =
+    filterId === 'filter-1' ? '#ffb74d' : filterId === 'filter-2' ? '#f48fb1' : '#ffd54f'
   ctx.beginPath()
   ctx.arc(width * 0.76, height * 0.7, width * 0.12, 0, Math.PI * 2)
   ctx.fill()
 
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
   ctx.font = `${Math.max(18, Math.round(width * 0.05))}px sans-serif`
-  ctx.fillText(filterId === 'filter-1' ? 'FILTER 1' : 'FILTER 2', width * 0.05, height * 0.18)
+  ctx.fillText(
+    filterId === 'filter-1' ? 'FILTER 1' : filterId === 'filter-2' ? 'FILTER 2' : 'FILTER 3',
+    width * 0.05,
+    height * 0.18
+  )
   ctx.restore()
 }
 
@@ -93,6 +71,7 @@ export default function CameraPage() {
       { id: 'none', label: '없음', icon: 'block' },
       { id: 'filter-1', label: '필터 1', img: `${FILTER_BASE}filter_overlay1.png` },
       { id: 'filter-2', label: '필터 2', img: `${FILTER_BASE}filter_overlay2.png` },
+      { id: 'filter-3', label: '필터 3', img: `${FILTER_BASE}filter_overlay3.png` },
     ],
     []
   )
@@ -172,7 +151,11 @@ export default function CameraPage() {
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+    ctx.save()
+    ctx.translate(width, 0)
+    ctx.scale(-1, 1)
     ctx.drawImage(video, 0, 0, width, height)
+    ctx.restore()
 
     const save = () => addShot(canvas.toDataURL('image/png'))
 
@@ -210,6 +193,15 @@ export default function CameraPage() {
     setShots([null, null, null, null])
   }
 
+  function downloadPhoto(src: string, index: number) {
+    const link = document.createElement('a')
+    link.href = src
+    link.download = `pokeguide-fourcut-${index + 1}.png`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) return
     void Promise.resolve().then(() => startCamera('user'))
@@ -228,43 +220,21 @@ export default function CameraPage() {
 
     const buildStrip = async () => {
       const images = await Promise.all(shots.map((shot) => loadImage(shot || '')))
+      const shotWidth = Math.max(...images.map((image) => image.naturalWidth))
+      const shotHeights = images.map((image) => Math.round(shotWidth * (image.naturalHeight / image.naturalWidth)))
       const canvas = document.createElement('canvas')
-      canvas.width = 720
-      canvas.height = 1280
+      canvas.width = shotWidth
+      canvas.height = shotHeights.reduce((sum, height) => sum + height, 0)
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
-      ctx.fillStyle = '#745b00'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const padding = 44
-      const frameX = padding
-      const frameY = padding
-      const frameWidth = canvas.width - padding * 2
-      const frameHeight = canvas.height - padding * 2
-      const radius = 64
-
-      ctx.fillStyle = '#ffeaa8'
-      ctx.beginPath()
-      ctx.roundRect(frameX, frameY, frameWidth, frameHeight, radius)
-      ctx.fill()
-
-      const slotX = frameX + 42
-      const slotWidth = frameWidth - 84
-      const slotHeight = 235
-      const gap = 26
-      const slotStartY = frameY + 42
-
+      let y = 0
       images.forEach((image, index) => {
-        const y = slotStartY + index * (slotHeight + gap)
-        ctx.fillStyle = '#f1f5f9'
-        ctx.fillRect(slotX, y, slotWidth, slotHeight)
-        drawCoverImage(ctx, image, image.naturalWidth, image.naturalHeight, slotX, y, slotWidth, slotHeight)
+        const height = shotHeights[index]
+        ctx.drawImage(image, 0, y, shotWidth, height)
+        y += height
       })
 
-      ctx.fillStyle = '#745b00'
-      ctx.font = 'bold 28px sans-serif'
-      ctx.fillText('POKEGUIDE PHOTO', slotX, frameY + frameHeight - 42)
       setRecent((items) => [canvas.toDataURL('image/png'), ...items].slice(0, 8))
     }
 
@@ -319,7 +289,7 @@ export default function CameraPage() {
                     <>
                       <video
                         ref={attachVideo}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover scale-x-[-1]"
                         playsInline
                         muted
                         autoPlay
@@ -457,14 +427,18 @@ export default function CameraPage() {
           <h3 className="font-headline-md text-headline-md text-on-surface mb-md">최근 찍은 사진</h3>
           <div className="grid grid-cols-2 gap-gutter">
             {recent.slice(0, 2).map((src, i) => (
-              <div
-                key={i}
-                className={
-                  'aspect-[9/16] bg-white p-2 rounded-lg pokemon-card-shadow hover:rotate-0 transition-transform duration-300 cursor-pointer overflow-hidden ' +
-                  (i === 0 ? 'rotate-2' : '-rotate-3')
-                }
-              >
-                <img alt={`최근 인생네컷 ${i + 1}`} className="h-full w-full rounded-sm object-cover" src={src} />
+              <div key={i} className="space-y-2">
+                <div className="bg-white rounded-sm pokemon-card-shadow cursor-pointer overflow-hidden">
+                  <img alt={`최근 인생네컷 ${i + 1}`} className="block h-auto w-full" src={src} />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => downloadPhoto(src, i)}
+                  className="flex w-full items-center justify-center gap-1 rounded-full bg-primary-container px-3 py-2 text-xs font-bold text-on-primary-container shadow-sm active:translate-y-0.5"
+                >
+                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  저장하기
+                </button>
               </div>
             ))}
             {!recent.length ? (
