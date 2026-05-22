@@ -1,25 +1,313 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="temi-landing-doc">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1200" />
-    <title>이벤트 안내</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta
+      name="viewport"
+      content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>이벤트 · 퀴즈 | 포켓몬 페스티벌</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="home-landing.css" />
+    <link rel="stylesheet" href="events-page.css" />
+    <script src="js/temi-bridge.js" defer></script>
   </head>
-  <body>
-    <div class="stage">
-      <header class="top-bar">
-        <div>
-          <h1>이벤트 안내</h1>
-          <p class="muted">MVP: 정적 예시 문구입니다.</p>
-        </div>
-        <a class="back-link" href="index.html">← 메인</a>
-      </header>
-      <div class="detail-main" style="flex: 1">
-        <p class="detail-body">
-          주말 야간 투어, 체험 이벤트 줄서기, 가족 스탬프 이벤트 등 자세한 일정은 안내 데스크에서 확인할 수 있습니다.
-        </p>
+  <body class="temi-landing temi-events">
+    <div id="evToast" class="ev-toast" role="status" aria-live="polite"></div>
+
+    <header class="tl-header">
+      <a class="tl-brand" href="index.html">Pokemon Exhibition</a>
+      <nav class="tl-nav" aria-label="주요 메뉴">
+        <a href="rally-qr.html">Stamp Rally</a>
+        <a href="guide.html">Map</a>
+        <a href="photo-intro.html">Photo Booth</a>
+        <a href="events.html" class="is-active">Events</a>
+      </nav>
+      <div class="tl-header-actions">
+        <button type="button" class="tl-icon-btn" id="btnNotify" aria-label="알림">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <a class="tl-icon-btn" href="index.html" aria-label="메인으로">
+          <span class="material-symbols-outlined">home</span>
+        </a>
       </div>
-    </div>
+    </header>
+
+    <main class="temi-scroll ev-events-main">
+      <section class="ev-hero" aria-labelledby="quiz-hero-title">
+        <div class="ev-hero-bg" aria-hidden="true"></div>
+        <div class="ev-hero-inner">
+          <div class="ev-hero-copy">
+            <span class="ev-live-badge">LIVE NOW</span>
+            <h1 id="quiz-hero-title">포켓몬 퀴즈 시간!</h1>
+            <p>
+              오박사님과 함께하는 특별한 퀴즈 타임! 여러분의 포켓몬 지식을 뽐내고 한정판 배지를
+              획득하세요. 지금 바로 도전하세요!
+            </p>
+            <button type="button" class="ev-btn-quiz" id="btnStartQuiz">퀴즈 시작하기</button>
+          </div>
+          <aside class="ev-professor" aria-label="오박사 특별 강의">
+            <div class="ev-professor-art" aria-hidden="true">🔬</div>
+            <p>오박사의 특별 강의</p>
+          </aside>
+        </div>
+      </section>
+
+      <div class="ev-layout">
+        <div class="ev-main-col">
+          <div class="ev-section-head">
+            <h2>
+              <span class="material-symbols-outlined">event</span>
+              진행 중인 이벤트
+            </h2>
+            <button type="button" class="ev-link-all" id="btnShowAll" style="background: none; border: none; cursor: pointer">
+              모두 보기
+            </button>
+          </div>
+
+          <div class="ev-grid">
+            <article class="ev-card" data-event="eevee" data-location="중앙 공원">
+              <div class="ev-card-thumb ev-card-thumb--1">
+                <span class="ev-tag">인기 이벤트</span>
+              </div>
+              <h3>이브이즈 가든 파티</h3>
+              <p class="ev-card-desc">
+                도시의 비밀 정원에서 이브이와 그 진화형들을 만나보세요! 특별한 간식과 기념품이
+                준비되어 있습니다.
+              </p>
+              <div class="ev-meta">
+                <span><span class="material-symbols-outlined">schedule</span> 14:00 - 17:00</span>
+                <span><span class="material-symbols-outlined">location_on</span> 중앙 공원</span>
+              </div>
+              <button type="button" class="ev-btn-join" data-join>참가하기</button>
+            </article>
+
+            <article class="ev-card" data-event="battle" data-location="배틀 아레나">
+              <div class="ev-card-thumb ev-card-thumb--2"></div>
+              <h3>메가 배틀 토너먼트</h3>
+              <p class="ev-card-desc">
+                최강의 트레이너들이 모이는 전당! 여러분의 실력을 증명하고 챔피언 트로피를
+                차지하세요.
+              </p>
+              <div class="ev-meta">
+                <span><span class="material-symbols-outlined">schedule</span> 19:00 - 22:00</span>
+                <span><span class="material-symbols-outlined">location_on</span> 배틀 아레나</span>
+              </div>
+              <button type="button" class="ev-btn-join" data-join>참가하기</button>
+            </article>
+
+            <article class="ev-card" data-event="drawing" data-location="아트 스튜디오">
+              <div class="ev-card-thumb ev-card-thumb--3"></div>
+              <h3>키즈 드로잉 클래스</h3>
+              <p class="ev-card-desc">
+                나만의 포켓몬을 그려보는 창의적인 시간! 전문 일러스트레이터가 기초부터
+                알려드립니다.
+              </p>
+              <div class="ev-meta">
+                <span><span class="material-symbols-outlined">schedule</span> 10:00 - 12:00</span>
+                <span><span class="material-symbols-outlined">location_on</span> 아트 스튜디오</span>
+              </div>
+              <button type="button" class="ev-btn-join" data-join>참가하기</button>
+            </article>
+
+            <article class="ev-card" data-event="goods" data-location="메인 광장">
+              <div class="ev-card-thumb ev-card-thumb--4"></div>
+              <h3>포켓몬 굿즈 페스티벌</h3>
+              <p class="ev-card-desc">
+                오직 이곳에서만 만날 수 있는 한정판 굿즈! 다양한 교환 부스와 팝업 스토어를
+                만나보세요.
+              </p>
+              <div class="ev-meta">
+                <span><span class="material-symbols-outlined">schedule</span> 11:00 - 20:00</span>
+                <span><span class="material-symbols-outlined">location_on</span> 메인 광장</span>
+              </div>
+              <button type="button" class="ev-btn-join" data-join>참가하기</button>
+            </article>
+          </div>
+        </div>
+
+        <aside class="ev-aside" aria-label="퀴즈 순위 및 일정">
+          <div class="ev-panel">
+            <h2>
+              <span class="material-symbols-outlined">military_tech</span>
+              오늘의 퀴즈 왕
+            </h2>
+            <div class="ev-rank-list">
+              <div class="ev-rank-row is-top">
+                <span class="ev-rank-num">1</span>
+                <div class="ev-avatar" aria-hidden="true">⚡</div>
+                <div class="ev-rank-info">
+                  <strong>지우</strong>
+                  <span>정답 20/20 (0:45)</span>
+                </div>
+                <span class="ev-points">990P</span>
+              </div>
+              <div class="ev-rank-row">
+                <span class="ev-rank-num">2</span>
+                <div class="ev-avatar" aria-hidden="true">💧</div>
+                <div class="ev-rank-info">
+                  <strong>이슬</strong>
+                  <span>정답 19/20 (0:52)</span>
+                </div>
+                <span class="ev-points">940P</span>
+              </div>
+              <div class="ev-rank-row">
+                <span class="ev-rank-num">3</span>
+                <div class="ev-avatar" aria-hidden="true">🌿</div>
+                <div class="ev-rank-info">
+                  <strong>웅이</strong>
+                  <span>정답 18/20 (1:05)</span>
+                </div>
+                <span class="ev-points">880P</span>
+              </div>
+            </div>
+            <button type="button" class="ev-btn-rank" id="btnMyRank">내 순위 확인하기</button>
+          </div>
+
+          <div class="ev-panel ev-mini-list">
+            <h2 style="color: var(--secondary); margin-bottom: 16px">다가오는 미니 퀴즈</h2>
+            <div class="ev-mini-item">
+              <div class="ev-date-box ev-date-box--a">
+                <span>15</span>
+                <span>MAY</span>
+              </div>
+              <div>
+                <p style="margin: 0; font-family: var(--font-label); font-weight: 600">
+                  물 속성 포켓몬 도감 퀴즈
+                </p>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #80765f">
+                  오후 3:00 시작 · 보상: 블루 배지
+                </p>
+              </div>
+            </div>
+            <div class="ev-mini-item">
+              <div class="ev-date-box ev-date-box--b">
+                <span>16</span>
+                <span>MAY</span>
+              </div>
+              <div>
+                <p style="margin: 0; font-family: var(--font-label); font-weight: 600">
+                  전설의 포켓몬을 맞춰라!
+                </p>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #80765f">
+                  오후 6:00 시작 · 보상: 마스터 볼 에코백
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ev-panel ev-stats-card">
+            <p class="ev-stats-label">나의 퀴즈 기록</p>
+            <h3>포켓몬 마스터</h3>
+            <div class="ev-progress-row">
+              <span>정답률 85%</span>
+              <span>Level 25</span>
+            </div>
+            <div class="ev-progress-bar">
+              <div class="ev-progress-fill"></div>
+            </div>
+            <span class="material-symbols-outlined ev-stats-icon">psychology</span>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="ev-kiosk-footer">
+        <span>© 2026 Pokemon Exhibition</span>
+        <nav aria-label="바로가기">
+          <a href="guide.html">전시장 안내</a>
+          <a href="rally-qr.html">스탬프 랠리</a>
+        </nav>
+        <a class="ev-kiosk-home" href="index.html">
+          <span class="material-symbols-outlined">arrow_back</span>
+          메인으로
+        </a>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var toastEl = document.getElementById("evToast");
+        var toastTimer;
+
+        function showToast(msg) {
+          if (!toastEl) return;
+          toastEl.textContent = msg;
+          toastEl.classList.add("is-visible");
+          clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () {
+            toastEl.classList.remove("is-visible");
+          }, 2800);
+        }
+
+        function speak(text) {
+          if (window.TemiBridge && window.TemiBridge.speak) {
+            window.TemiBridge.speak(text);
+          }
+        }
+
+        document.getElementById("btnStartQuiz").addEventListener("click", function () {
+          showToast("퀴즈 세션이 곧 시작됩니다! (MVP 데모)");
+          speak("포켓몬 퀴즈에 오신 것을 환영합니다. 준비되면 문제가 표시됩니다.");
+        });
+
+        document.getElementById("btnMyRank").addEventListener("click", function () {
+          showToast("키오스크에서는 순위 확인 데모만 제공됩니다.");
+        });
+
+        document.getElementById("btnShowAll").addEventListener("click", function () {
+          var col = document.querySelector(".ev-main-col");
+          if (col) col.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        document.getElementById("btnNotify").addEventListener("click", function () {
+          showToast("새 이벤트 알림이 없습니다.");
+        });
+
+        document.querySelectorAll("[data-join]").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var card = btn.closest(".ev-card");
+            var title = card ? card.querySelector("h3").textContent : "이벤트";
+            var loc = card ? card.getAttribute("data-location") : "";
+            if (
+              loc &&
+              window.TemiBridge &&
+              window.TemiBridge.isAvailable() &&
+              window.TemiBridge.goto(loc)
+            ) {
+              showToast(title + " — " + loc + "으로 안내합니다.");
+              return;
+            }
+            showToast(title + " 참가 신청이 접수되었습니다. (데모)");
+            if (loc) speak(title + ". " + loc + "에서 만나요.");
+          });
+        });
+
+        document.querySelectorAll("[data-toast]").forEach(function (el) {
+          el.addEventListener("click", function (e) {
+            e.preventDefault();
+            showToast(el.getAttribute("data-toast"));
+          });
+        });
+
+        window.addEventListener("temi:nav", function (ev) {
+          var d = (ev && ev.detail) || {};
+          if (d.state === "arrived" && d.locationId) {
+            showToast(d.locationId + "에 도착했습니다.");
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

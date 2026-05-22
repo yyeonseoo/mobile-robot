@@ -1,94 +1,332 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="temi-landing-doc">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1200" />
-    <title>전시장 안내</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta
+      name="viewport"
+      content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>전시장 안내 | 포켓몬 페스티벌</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="home-landing.css" />
+    <link rel="stylesheet" href="guide-page.css" />
+    <script src="js/temi-bridge.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
   </head>
-  <body>
-    <div class="stage">
-      <header class="top-bar">
-        <div>
-          <h1>어디로 안내해드릴까요?</h1>
-          <p class="muted">구역을 선택하면 상세 화면으로 이동합니다.</p>
-        </div>
-        <a class="back-link" href="index.html">← 메인</a>
-      </header>
+  <body class="temi-landing temi-guide">
+    <div id="gdToast" class="gd-toast" role="status" aria-live="polite"></div>
 
-      <div class="screen-body" style="gap: 20px">
-        <div style="display: flex; gap: 16px; flex-wrap: wrap">
-          <button type="button" class="voice-btn" style="min-width: 240px; min-height: 64px; font-size: 1.05rem" id="btnNear">
-            현재 위치 기준 찾기 (데모)
-          </button>
-          <button type="button" class="voice-btn" style="min-width: 240px; min-height: 64px; font-size: 1.05rem" id="btnAllMap">
-            전체 지도 보기 (데모)
-          </button>
-        </div>
-        <div class="zone-cards" id="zoneCards"></div>
-        <div class="qr-panel">
-          <div class="qr-host"><div id="qrPhone"></div></div>
-          <div class="hint">
-            <strong>폰으로 이어서 보기</strong><br />
-            QR을 스캔하면 모바일에서 검색·상세·길안내를 이어갈 수 있습니다.
+    <header class="tl-header">
+      <a class="tl-brand" href="index.html">Pokemon Exhibition</a>
+      <nav class="tl-nav" aria-label="주요 메뉴">
+        <a href="rally-qr.html">Stamp Rally</a>
+        <a href="guide.html" class="is-active">Map</a>
+        <a href="photo-intro.html">Photo Booth</a>
+        <a href="events.html">Events</a>
+      </nav>
+      <div class="tl-header-actions">
+        <button type="button" class="tl-icon-btn" id="btnNotify" aria-label="알림">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <a class="tl-icon-btn" href="index.html" aria-label="메인으로">
+          <span class="material-symbols-outlined">home</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="temi-scroll temi-scroll--split gd-layout">
+      <aside class="gd-sidebar" aria-label="키오스크 메뉴">
+        <div class="gd-trainer">
+          <div class="gd-avatar" aria-hidden="true">🎒</div>
+          <div>
+            <h3>전시 탐험가</h3>
+            <p>키오스크 가이드</p>
           </div>
         </div>
+        <nav class="gd-side-nav">
+          <a class="gd-side-link" href="index.html">
+            <span class="material-symbols-outlined">home</span>
+            메인 홈
+          </a>
+          <button type="button" class="gd-side-link is-active" id="btnSideMap">
+            <span class="material-symbols-outlined">map</span>
+            전시 지도
+          </button>
+          <a class="gd-side-link" href="rally-qr.html">
+            <span class="material-symbols-outlined">qr_code_scanner</span>
+            스탬프 랠리
+          </a>
+          <a class="gd-side-link" href="events.html">
+            <span class="material-symbols-outlined">emoji_events</span>
+            이벤트
+          </a>
+        </nav>
+        <a class="gd-qr-dock" href="rally-qr.html" id="sideQrDock">
+          <span class="material-symbols-outlined">qr_code_scanner</span>
+          <strong>QR 스캔 안내</strong>
+        </a>
+      </aside>
+
+      <div class="gd-main custom-scrollbar">
+        <div class="gd-head">
+          <div>
+            <h1>어디로 갈까요, 테미?</h1>
+            <p id="gdSubtitle">가까운 순으로 정렬된 전시 존을 확인하세요.</p>
+          </div>
+          <div class="gd-toolbar">
+            <button type="button" class="gd-tool-btn gd-tool-btn--sort" id="btnSortNear">
+              <span class="material-symbols-outlined">sort</span>
+              가까운 순 정렬
+            </button>
+            <button type="button" class="gd-tool-btn gd-tool-btn--map" id="btnScrollMap">
+              <span class="material-symbols-outlined">map</span>
+              전체 지도 보기
+            </button>
+          </div>
+        </div>
+
+        <div class="gd-grid" id="gdGrid">
+          <p class="gd-loading">전시 목록을 불러오는 중…</p>
+        </div>
+
+        <section class="gd-map-section" id="guideMap" aria-label="전체 지도">
+          <div class="gd-map-visual">
+            <div class="gd-map-pin">
+              <div class="gd-map-pin-inner">
+                <span class="material-symbols-outlined">location_pin</span>
+                <span id="gdCurrentLoc">현재 위치: 중앙 인포메이션</span>
+              </div>
+            </div>
+          </div>
+          <div class="gd-map-qr">
+            <h3>내 폰으로 지도 보기</h3>
+            <div class="qr-host"><div id="qrPhone"></div></div>
+            <p>스캔하고 지도를<br />휴대폰에 담아가세요!</p>
+            <a id="gdPhoneLink" href="/mobile/app/map">링크로 바로가기</a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="gd-nav-overlay" id="navOverlay" role="dialog" aria-modal="true" aria-labelledby="targetZone">
+      <div class="gd-nav-modal">
+        <div class="gd-nav-icon">
+          <span class="material-symbols-outlined">smart_toy</span>
+        </div>
+        <h2 id="targetZone">A존으로 이동합니다</h2>
+        <p id="navStatusText">테미가 안전하게 안내해 드릴게요. 잠시만 기다려 주세요!</p>
+        <div class="gd-progress" id="navProgress" aria-hidden="true">
+          <div class="gd-progress-bar"></div>
+        </div>
+        <button type="button" class="gd-btn-cancel" id="btnCancelNav">이동 취소</button>
       </div>
     </div>
+
     <script>
-      function origin() {
-        return location.origin;
-      }
-      function renderQr() {
-        var host = document.getElementById("qrPhone");
-        host.innerHTML = "";
-        if (window.QRCode) {
-          new QRCode(host, {
-            text: origin() + "/mobile/app/map",
-            width: 200,
-            height: 200,
+      (function () {
+        var exhibitions = [];
+        var sortMode = "default";
+        var activeNavZone = null;
+
+        function origin() {
+          return location.origin;
+        }
+
+        function showToast(msg) {
+          var el = document.getElementById("gdToast");
+          if (!el) return;
+          el.textContent = msg;
+          el.classList.add("is-visible");
+          clearTimeout(showToast._t);
+          showToast._t = setTimeout(function () {
+            el.classList.remove("is-visible");
+          }, 2800);
+        }
+
+        function zoneThumbClass(zone) {
+          var z = (zone || "").trim();
+          if (z.indexOf("A") === 0) return "gd-card-thumb--A";
+          if (z.indexOf("B") === 0) return "gd-card-thumb--B";
+          if (z.indexOf("C") === 0) return "gd-card-thumb--C";
+          if (z.indexOf("D") === 0) return "gd-card-thumb--D";
+          return "gd-card-thumb--default";
+        }
+
+        function sortedList() {
+          var list = exhibitions.slice();
+          if (sortMode === "near") {
+            list.sort(function (a, b) {
+              return (a.estimatedMinutes || 99) - (b.estimatedMinutes || 99);
+            });
+          }
+          return list;
+        }
+
+        function renderCards() {
+          var grid = document.getElementById("gdGrid");
+          var list = sortedList();
+          if (!list.length) {
+            grid.innerHTML = '<p class="gd-error">등록된 전시가 없습니다.</p>';
+            return;
+          }
+          grid.innerHTML = "";
+          list.forEach(function (ex) {
+            var card = document.createElement("article");
+            card.className = "gd-card";
+            card.innerHTML =
+              '<div class="gd-card-thumb ' +
+              zoneThumbClass(ex.zone) +
+              '"><span class="gd-zone-badge">' +
+              escapeHtml(ex.zone || "구역") +
+              '</span></div><div class="gd-card-body"><h2>' +
+              escapeHtml(ex.name) +
+              '</h2><div class="gd-loc"><span class="material-symbols-outlined">location_on</span><span>' +
+              escapeHtml(ex.locationText || "") +
+              '</span></div><div class="gd-card-actions"><button type="button" class="gd-btn-go" data-goto="' +
+              escapeAttr(ex.zone || "") +
+              '"><span class="material-symbols-outlined">smart_toy</span>테미와 함께 가기</button><button type="button" class="gd-btn-detail" data-id="' +
+              ex.id +
+              '">상세 보기</button></div></div>';
+            grid.appendChild(card);
+          });
+
+          grid.querySelectorAll("[data-goto]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              navigateTemi(btn.getAttribute("data-goto"));
+            });
+          });
+          grid.querySelectorAll("[data-id]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              location.href = "guide-detail.html?id=" + encodeURIComponent(btn.getAttribute("data-id"));
+            });
           });
         }
-      }
-      fetch(origin() + "/api/exhibitions")
-        .then(function (r) {
-          return r.json();
-        })
-        .then(function (rows) {
-          var box = document.getElementById("zoneCards");
-          box.innerHTML = "";
-          rows.forEach(function (ex) {
-            var b = document.createElement("button");
-            b.type = "button";
-            b.className = "zone-card";
-            b.innerHTML =
-              "<h2>" +
-              ex.name +
-              "</h2><p>" +
-              ex.zone +
-              " · " +
-              ex.locationText +
-              "</p>";
-            b.onclick = function () {
-              location.href = "guide-detail.html?id=" + ex.id;
-            };
-            box.appendChild(b);
-          });
-        })
-        .catch(function () {
-          document.getElementById("zoneCards").textContent =
-            "전시 정보를 불러오지 못했습니다. 서버가 실행 중인지 확인하세요.";
+
+        function escapeHtml(s) {
+          var d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        function escapeAttr(s) {
+          return String(s).replace(/"/g, "&quot;");
+        }
+
+        function openNavOverlay(zoneName) {
+          activeNavZone = zoneName;
+          document.getElementById("targetZone").textContent = zoneName + "으로 이동합니다";
+          document.getElementById("navStatusText").textContent =
+            "테미가 안전하게 안내해 드릴게요. 잠시만 기다려 주세요!";
+          document.getElementById("navProgress").hidden = false;
+          document.getElementById("navOverlay").classList.add("is-open");
+        }
+
+        function closeNavOverlay() {
+          document.getElementById("navOverlay").classList.remove("is-open");
+          activeNavZone = null;
+        }
+
+        function navigateTemi(zoneName) {
+          var zone = (zoneName || "").trim();
+          if (!zone) {
+            showToast("이동할 구역 정보가 없습니다.");
+            return;
+          }
+          openNavOverlay(zone);
+          if (window.TemiBridge && window.TemiBridge.goto(zone)) {
+            return;
+          }
+          document.getElementById("navStatusText").textContent =
+            "데모 모드: Android Bridge 연결 시 실제로 이동합니다.";
+        }
+
+        function cancelNav() {
+          closeNavOverlay();
+          showToast("이동을 취소했습니다.");
+        }
+
+        function renderPhoneQr() {
+          var host = document.getElementById("qrPhone");
+          if (!host || !window.QRCode) return;
+          host.innerHTML = "";
+          var url = origin() + "/mobile/app/map";
+          document.getElementById("gdPhoneLink").href = url;
+          new QRCode(host, { text: url, width: 160, height: 160 });
+        }
+
+        function loadExhibitions() {
+          fetch(origin() + "/api/exhibitions")
+            .then(function (r) {
+              if (!r.ok) throw new Error("fetch");
+              return r.json();
+            })
+            .then(function (rows) {
+              exhibitions = rows || [];
+              renderCards();
+            })
+            .catch(function () {
+              document.getElementById("gdGrid").innerHTML =
+                '<p class="gd-error">전시 정보를 불러오지 못했습니다. 서버가 실행 중인지 확인하세요.</p>';
+            });
+        }
+
+        document.getElementById("btnSortNear").addEventListener("click", function () {
+          sortMode = sortMode === "near" ? "default" : "near";
+          document.getElementById("gdSubtitle").textContent =
+            sortMode === "near"
+              ? "예상 이동 시간이 짧은 순으로 정렬했습니다."
+              : "가까운 순으로 정렬된 전시 존을 확인하세요.";
+          renderCards();
+          showToast(sortMode === "near" ? "가까운 순으로 정렬했습니다." : "기본 순서로 되돌렸습니다.");
         });
-      window.addEventListener("load", function () {
-        renderQr();
-      });
-      document.getElementById("btnNear").onclick = function () {
-        alert("데모: 실제 구현 시 테미 위치와 전시 좌표를 비교해 가까운 순으로 정렬합니다.");
-      };
-      document.getElementById("btnAllMap").onclick = function () {
-        alert("데모: 실제 구현 시 지도 이미지 또는 평면도 뷰어로 연결합니다.");
-      };
+
+        document.getElementById("btnScrollMap").addEventListener("click", function () {
+          document.getElementById("guideMap").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        document.getElementById("btnCancelNav").addEventListener("click", cancelNav);
+
+        document.getElementById("btnNotify").addEventListener("click", function () {
+          showToast("새 안내 알림이 없습니다.");
+        });
+
+        document.getElementById("btnSideMap").addEventListener("click", function () {
+          document.querySelector(".gd-main").scrollTop = 0;
+        });
+
+        window.addEventListener("temi:nav", function (ev) {
+          var d = (ev && ev.detail) || {};
+          if (!document.getElementById("navOverlay").classList.contains("is-open")) return;
+          if (d.state === "arrived") {
+            document.getElementById("navStatusText").textContent = "도착했습니다!";
+            document.getElementById("navProgress").hidden = true;
+            setTimeout(closeNavOverlay, 1200);
+          } else if (d.state === "error") {
+            document.getElementById("navStatusText").textContent =
+              d.message || "이동할 수 없습니다. 안내 데스크에 문의해 주세요.";
+            document.getElementById("navProgress").hidden = true;
+          } else if (d.state === "moving") {
+            document.getElementById("navStatusText").textContent = "이동 중…";
+          }
+        });
+
+        window.addEventListener("load", function () {
+          loadExhibitions();
+          renderPhoneQr();
+        });
+      })();
     </script>
   </body>
 </html>

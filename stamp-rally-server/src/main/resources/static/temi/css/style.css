@@ -73,6 +73,10 @@ body {
   gap: 32px;
 }
 
+html.temi-landing-doc body.temi-landing.temi-legacy .stage {
+  height: auto;
+}
+
 .top-bar {
   display: flex;
   align-items: center;
