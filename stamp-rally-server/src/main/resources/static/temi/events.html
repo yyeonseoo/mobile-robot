@@ -537,7 +537,16 @@
 
         document.getElementById("btnShowAll").addEventListener("click", function () {
           var list = document.querySelector(".ev-upcoming-list");
-          if (list) list.scrollTo({ top: 0, behavior: "smooth" });
+          var btn = document.getElementById("btnShowAll");
+          if (!list || !btn) return;
+          var expanded = list.classList.toggle("is-expanded");
+          btn.textContent = expanded ? "< 더보기" : "더보기 +";
+          if (expanded) {
+            var third = list.querySelector(".ev-upcoming-item:nth-child(3)");
+            if (third) third.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          } else {
+            list.scrollTo({ top: 0, behavior: "smooth" });
+          }
         });
 
         document.getElementById("btnNotify").addEventListener("click", function () {

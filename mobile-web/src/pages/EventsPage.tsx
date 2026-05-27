@@ -36,7 +36,32 @@ const UPCOMING_EVENTS = [
     ctaClass: 'bg-surface-variant text-on-surface-variant',
     meta: '센트럴 광장',
   },
+  {
+    id: 'battle',
+    title: '메가 배틀 토너먼트',
+    desc: '자신만의 파티로 배틀 아레나에 도전하세요. 우승자에게 한정 굿즈가 제공됩니다.',
+    badge: '오늘 저녁',
+    badgeClass: 'bg-tertiary-container text-on-tertiary-container',
+    image: PIKACHU_IMG,
+    cta: '예약하기',
+    ctaClass: 'bg-tertiary text-white',
+    meta: '배틀 아레나',
+  },
+  {
+    id: 'ar-photo',
+    title: 'AR 포토존',
+    desc: '포켓몬 AR 필터와 함께 인생샷을 남겨 보세요. 모바일 앱에서도 확인할 수 있어요.',
+    badge: '상시 운영',
+    badgeClass: 'bg-surface-container-highest text-on-surface-variant',
+    image: EEVEE_IMG,
+    cta: '알림 받기',
+    ctaClass: 'bg-surface-variant text-on-surface-variant',
+    meta: '포토 스튜디오',
+  },
 ] as const
+
+const COLLAPSED_RECOMMEND_COUNT = 1
+const COLLAPSED_UPCOMING_COUNT = 1
 
 const RECOMMEND_PRESETS = [
   {
@@ -62,6 +87,18 @@ const RECOMMEND_PRESETS = [
     borderClass: 'border-tertiary/20 hover:border-tertiary/40',
     btnClass: 'bg-tertiary text-white',
     chipClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
+  },
+  {
+    id: 'safari',
+    title: '사파리 존 탐험',
+    tag: null,
+    reason: '야외 체험을 좋아하시면 추천!',
+    time: '내일 오전 10시',
+    image: EEVEE_IMG,
+    thumbClass: 'bg-secondary-fixed',
+    borderClass: 'border-secondary/20 hover:border-secondary/40',
+    btnClass: 'bg-secondary-container text-white',
+    chipClass: 'bg-secondary-fixed text-on-secondary-fixed',
   },
 ] as const
 
@@ -330,9 +367,21 @@ export default function EventsPage() {
           <button
             type="button"
             className="font-label-bold text-primary hover:underline underline-offset-2"
-            onClick={() => setShowEventMore((v) => !v)}
+            onClick={() => {
+              setShowEventMore((v) => {
+                const next = !v
+                if (next) {
+                  window.requestAnimationFrame(() => {
+                    document
+                      .getElementById('events-recommend')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  })
+                }
+                return next
+              })
+            }}
           >
-            {showEventMore ? '< 더보기' : '더보기 +'}
+            {showEventMore ? '< 접기' : '더보기 +'}
           </button>
         </section>
 
@@ -492,7 +541,7 @@ export default function EventsPage() {
         </section>
 
         {/* 당신을 위한 추천 */}
-        <section className="space-y-6">
+        <section id="events-recommend" className="space-y-6 scroll-mt-28">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">stars</span>
@@ -541,7 +590,10 @@ export default function EventsPage() {
           ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {(showEventMore ? RECOMMEND_PRESETS : RECOMMEND_PRESETS.slice(0, 2)).map((card) => (
+            {(showEventMore
+              ? RECOMMEND_PRESETS
+              : RECOMMEND_PRESETS.slice(0, COLLAPSED_RECOMMEND_COUNT)
+            ).map((card) => (
               <div
                 key={card.id}
                 className={
@@ -615,7 +667,10 @@ export default function EventsPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {(showEventMore ? UPCOMING_EVENTS : UPCOMING_EVENTS.slice(0, 2)).map((ev) => (
+            {(showEventMore
+              ? UPCOMING_EVENTS
+              : UPCOMING_EVENTS.slice(0, COLLAPSED_UPCOMING_COUNT)
+            ).map((ev) => (
               <article
                 key={ev.id}
                 className="bg-white rounded-lg border-8 border-white p-0 overflow-hidden toy-card hover:scale-[1.02] transition-transform"

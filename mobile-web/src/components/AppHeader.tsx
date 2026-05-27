@@ -18,18 +18,6 @@ type AppHeaderProps = {
   right?: ReactNode
 }
 
-function CaptureIcon() {
-  return (
-    <span
-      className="material-symbols-outlined text-3xl text-slate-900 dark:text-white"
-      style={{ fontVariationSettings: "'FILL' 1" }}
-      aria-hidden
-    >
-      capture
-    </span>
-  )
-}
-
 export default function AppHeader({
   variant = 'sub',
   backTo = '/',
@@ -69,7 +57,7 @@ export default function AppHeader({
         </button>
         <h1 className={`${LOGO_CLASS} truncate`}>POKÉGUIDE</h1>
       </div>
-      <div className="shrink-0 flex items-center">{right ?? <CaptureIcon />}</div>
+      {right ? <div className="shrink-0 flex items-center">{right}</div> : null}
     </header>
   )
 }
