@@ -1,6 +1,8 @@
 package com.temi.stamprally.web;
 
 import com.temi.stamprally.visitor.VisitorProfileService;
+import com.temi.stamprally.web.dto.VisitorEventActionRequest;
+import com.temi.stamprally.web.dto.VisitorEventActionResponse;
 import com.temi.stamprally.web.dto.QuizChallengeSubmitRequest;
 import com.temi.stamprally.web.dto.QuizXpResponse;
 import com.temi.stamprally.web.dto.QuizXpSyncRequest;
@@ -85,5 +87,18 @@ public class VisitorController {
         .contentType(MediaType.IMAGE_PNG)
         .contentLength(Files.size(file))
         .body(resource);
+  }
+
+  @GetMapping("/event-actions")
+  public List<VisitorEventActionResponse> listEventActions(
+      @RequestHeader(LocationController.VISITOR_TOKEN_HEADER) String visitorToken) {
+    return visitorProfileService.listEventActions(visitorToken);
+  }
+
+  @PostMapping("/event-actions")
+  public List<VisitorEventActionResponse> setEventAction(
+      @RequestHeader(LocationController.VISITOR_TOKEN_HEADER) String visitorToken,
+      @RequestBody VisitorEventActionRequest body) {
+    return visitorProfileService.setEventAction(visitorToken, body);
   }
 }

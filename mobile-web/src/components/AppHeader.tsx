@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const HEADER_CLASS =
-  'bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4'
+  'bg-yellow-400 dark:bg-yellow-600 text-slate-900 dark:text-white sticky top-0 z-50 border-b-4 border-yellow-600 dark:border-yellow-800 shadow-xl flex justify-between items-center w-full px-6 py-4 overflow-hidden'
 
 const LOGO_CLASS =
-  "text-2xl font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']"
+  "text-2xl leading-none font-extrabold italic text-slate-900 dark:text-white tracking-tighter font-['Plus_Jakarta_Sans']"
 
 export const APP_HEADER_MAIN_PT = 'pt-24'
 

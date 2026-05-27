@@ -381,7 +381,7 @@ body.temi-events .ev-layout-shell {
 
 .ev-pokedex-desc {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1.45;
   color: var(--on-bg);
@@ -1278,8 +1278,8 @@ body.temi-events .ev-layout-shell {
 /* Toast */
 .ev-toast {
   position: fixed;
-  left: 50%;
-  bottom: 48px;
+  left: calc(var(--frame-x) + (var(--frame-w) / 2));
+  bottom: calc(var(--frame-y) + 48px);
   transform: translateX(-50%) translateY(16px);
   opacity: 0;
   pointer-events: none;

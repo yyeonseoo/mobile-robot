@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import BottomNav from '../components/BottomNav'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import DailyChallengePanel from '../components/DailyChallengePanel'
+import { getVisitorToken } from '../lib/storage'
+import { listEventActions, setEventAction, type VisitorEventAction } from '../lib/visitorApi'
 
 const FESTIVAL_HERO_IMG = `${import.meta.env.BASE_URL}events/pokemon-festival-2026.png`
 
@@ -19,7 +21,7 @@ const UPCOMING_EVENTS = [
     badge: '진행 중',
     badgeClass: 'bg-secondary-container text-on-secondary-container',
     image: EEVEE_IMG,
-    cta: '참가',
+    cta: '예약하기',
     ctaClass: 'bg-tertiary text-white',
     meta: '12k+ 참가',
   },
@@ -175,11 +177,54 @@ export default function EventsPage() {
   const [showRecommendPrefs, setShowRecommendPrefs] = useState(false)
 
   const [toast, setToast] = useState('')
+  const [showEventMore, setShowEventMore] = useState(false)
+  const [showUpcomingAll, setShowUpcomingAll] = useState(false)
+  const [eventActions, setEventActions] = useState<VisitorEventAction[]>([])
 
   function flash(msg: string) {
     setToast(msg)
     window.setTimeout(() => setToast(''), 2800)
   }
+
+  const actionSet = useMemo(() => {
+    const set = new Set<string>()
+    for (const a of eventActions) set.add(`${a.eventId}:${a.actionType}`)
+    return set
+  }, [eventActions])
+
+  function hasAction(eventId: string, actionType: string) {
+    return actionSet.has(`${eventId}:${actionType}`)
+  }
+
+  async function toggle(eventId: string, actionType: 'reserve' | 'alarm') {
+    if (!getVisitorToken()) {
+      flash('입장에서 닉네임/전화번호를 입력하면 저장할 수 있어요.')
+      return
+    }
+    const next = !hasAction(eventId, actionType)
+    try {
+      const updated = await setEventAction(eventId, actionType, next)
+      setEventActions(updated)
+      flash(
+        actionType === 'reserve'
+          ? next
+            ? '예약이 완료되었습니다.'
+            : '예약이 취소되었습니다.'
+          : next
+            ? '알림을 설정했습니다.'
+            : '알림을 해제했습니다.'
+      )
+    } catch {
+      flash('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.')
+    }
+  }
+
+  useEffect(() => {
+    if (!getVisitorToken()) return
+    listEventActions()
+      .then(setEventActions)
+      .catch(() => {})
+  }, [])
 
   async function searchPokedex() {
     const q = pokedexQuery.trim()
@@ -240,7 +285,7 @@ export default function EventsPage() {
         <section className="relative rounded-lg overflow-hidden border-4 border-tertiary shadow-xl">
           <img
             src={FESTIVAL_HERO_IMG}
-            alt="2026 Pokemon Festival Pocket Adventure — 피카츄, 이브이, 꼬부기"
+            alt="포켓몬 페스티벌 2026 Pocket Adventure — 피카츄, 이브이, 꼬부기"
             className="w-full aspect-[16/9] object-cover object-center"
           />
           <div
@@ -253,7 +298,7 @@ export default function EventsPage() {
                 2026 · 한정 이벤트
               </span>
               <h2 className="font-display-lg text-[clamp(1.75rem,5vw,3rem)] leading-tight drop-shadow-md">
-                Pokemon Festival
+                포켓몬 페스티벌 2026
               </h2>
               <p className="font-headline-md text-primary-container tracking-wide">POCKET ADVENTURE</p>
               <p className="font-body-md text-white/90 leading-relaxed break-keep [word-break:keep-all]">
@@ -276,6 +321,20 @@ export default function EventsPage() {
           topic={pokedexQuery.trim() || interests.trim()}
           onToast={flash}
         />
+
+        <section className="flex items-center justify-between gap-3 flex-wrap">
+          <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary">event</span>
+            추천 &amp; 예정된 이벤트
+          </h3>
+          <button
+            type="button"
+            className="font-label-bold text-primary hover:underline underline-offset-2"
+            onClick={() => setShowEventMore((v) => !v)}
+          >
+            {showEventMore ? '< 더보기' : '더보기 +'}
+          </button>
+        </section>
 
         {/* AI 포켓몬 도감 */}
         <section ref={aiSectionRef} className="space-y-6">
@@ -482,7 +541,7 @@ export default function EventsPage() {
           ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {RECOMMEND_PRESETS.map((card) => (
+            {(showEventMore ? RECOMMEND_PRESETS : RECOMMEND_PRESETS.slice(0, 2)).map((card) => (
               <div
                 key={card.id}
                 className={
@@ -491,11 +550,11 @@ export default function EventsPage() {
                 }
                 role="button"
                 tabIndex={0}
-                onClick={() => flash(`${card.title} — 참가 신청 데모`)}
-                onKeyDown={(e) => e.key === 'Enter' && flash(`${card.title} — 참가 신청 데모`)}
+                onClick={() => toggle(card.id, 'reserve')}
+                onKeyDown={(e) => e.key === 'Enter' && toggle(card.id, 'reserve')}
               >
                 {card.tag ? (
-                  <div className="absolute -top-2 -left-2 bg-primary text-white text-[10px] font-label-bold px-3 py-1 rounded-br-lg z-10">
+                  <div className="absolute top-3 left-3 bg-primary text-white text-[10px] font-label-bold px-3 py-1 rounded-full z-10 shadow-md">
                     {card.tag}
                   </div>
                 ) : null}
@@ -528,10 +587,10 @@ export default function EventsPage() {
                       }
                       onClick={(e) => {
                         e.stopPropagation()
-                        flash(`${card.title} 참가!`)
+                        toggle(card.id, 'reserve')
                       }}
                     >
-                      참가하기
+                      {hasAction(card.id, 'reserve') ? '예약됨' : '예약하기'}
                     </button>
                   </div>
                 </div>
@@ -550,13 +609,13 @@ export default function EventsPage() {
             <button
               type="button"
               className="font-label-bold text-primary hover:underline"
-              onClick={() => flash('전체 이벤트 목록 (데모)')}
+              onClick={() => setShowUpcomingAll(true)}
             >
               전체보기
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {UPCOMING_EVENTS.map((ev) => (
+            {(showEventMore ? UPCOMING_EVENTS : UPCOMING_EVENTS.slice(0, 2)).map((ev) => (
               <article
                 key={ev.id}
                 className="bg-white rounded-lg border-8 border-white p-0 overflow-hidden toy-card hover:scale-[1.02] transition-transform"
@@ -585,9 +644,15 @@ export default function EventsPage() {
                     <button
                       type="button"
                       className={'font-label-bold px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
-                      onClick={() => flash(`${ev.title} — ${ev.cta}`)}
+                      onClick={() => toggle(ev.id, ev.cta === '알림 받기' ? 'alarm' : 'reserve')}
                     >
-                      {ev.cta}
+                      {ev.cta === '알림 받기'
+                        ? hasAction(ev.id, 'alarm')
+                          ? '알림 설정됨'
+                          : '알림 받기'
+                        : hasAction(ev.id, 'reserve')
+                          ? '예약됨'
+                          : '예약하기'}
                     </button>
                   </div>
                 </div>
@@ -597,6 +662,90 @@ export default function EventsPage() {
         </section>
 
       </main>
+
+      {showUpcomingAll ? (
+        <div
+          className="fixed inset-0 z-[70] bg-slate-950/50 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="전체 이벤트 목록"
+          onClick={() => setShowUpcomingAll(false)}
+        >
+          <div
+            className="mx-auto w-full max-w-4xl bg-white rounded-2xl border-8 border-white toy-card overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 px-6 py-5 bg-surface-container-low border-b-4 border-white">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-secondary">event</span>
+                <h3 className="font-headline-md text-headline-md text-on-surface truncate">
+                  전체 이벤트
+                </h3>
+                <span className="text-xs font-label-bold text-on-surface-variant">
+                  {UPCOMING_EVENTS.length}개
+                </span>
+              </div>
+              <button
+                type="button"
+                className="shrink-0 w-10 h-10 rounded-full bg-white border-2 border-surface-variant flex items-center justify-center hover:opacity-80 active:scale-95 transition"
+                aria-label="닫기"
+                onClick={() => setShowUpcomingAll(false)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-auto p-6 bg-background">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                {UPCOMING_EVENTS.map((ev) => (
+                  <article
+                    key={`all-${ev.id}`}
+                    className="bg-white rounded-lg border-8 border-white p-0 overflow-hidden toy-card hover:scale-[1.02] transition-transform"
+                  >
+                    <div className="h-48 relative overflow-hidden">
+                      <img alt="" className="w-full h-full object-cover" src={ev.image} />
+                      <div className="absolute top-4 left-4">
+                        <span
+                          className={
+                            'font-label-bold px-3 py-1 rounded-full text-xs border-2 border-white shadow-md ' +
+                            ev.badgeClass
+                          }
+                        >
+                          {ev.badge}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6 bg-surface-container-low">
+                      <h4 className="font-headline-md text-headline-md text-on-surface mb-2">
+                        {ev.title}
+                      </h4>
+                      <p className="text-on-surface-variant font-body-md mb-4">{ev.desc}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-on-surface-variant">
+                          <span className="material-symbols-outlined text-sm">location_on</span>
+                          <span className="text-xs font-label-bold">{ev.meta}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={'font-label-bold px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
+                          onClick={() => toggle(ev.id, ev.cta === '알림 받기' ? 'alarm' : 'reserve')}
+                        >
+                          {ev.cta === '알림 받기'
+                            ? hasAction(ev.id, 'alarm')
+                              ? '알림 설정됨'
+                              : '알림 받기'
+                            : hasAction(ev.id, 'reserve')
+                              ? '예약됨'
+                              : '예약하기'}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {toast ? (
         <div

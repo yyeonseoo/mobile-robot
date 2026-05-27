@@ -22,6 +22,7 @@
     />
     <link rel="stylesheet" href="home-landing.css" />
     <link rel="stylesheet" href="photo-capture-page.css" />
+    <script src="js/i18n.js" defer></script>
   </head>
   <body class="temi-landing temi-photo-capture">
     <header class="tl-header">
@@ -46,7 +47,7 @@
       <section class="pb-camera-stage" id="cameraView" aria-label="카메라 촬영">
         <div class="pb-viewport">
           <video id="cam" playsinline autoplay muted aria-label="카메라 미리보기"></video>
-          <div class="pb-trainer-deco" aria-hidden="true">🧢</div>
+          <!-- 장식(둥둥 떠다니는 요소) 제거 -->
           <div class="pb-hud">
             <div>
               <span class="pb-live-badge">
@@ -60,7 +61,7 @@
         </div>
 
         <aside class="pb-filters" aria-label="프레임 선택">
-          <h3>프레임 선택</h3>
+          <h3 data-i18n="capture.filters">프레임 선택</h3>
           <div class="pb-filter-list" id="filterList"></div>
         </aside>
 
@@ -69,7 +70,9 @@
           <button type="button" class="pb-shutter-btn" id="shutter" disabled aria-label="촬영">
             <span class="pb-shutter-inner"></span>
           </button>
-          <p class="pb-shutter-hint" id="shutterHint">프레임을 선택한 뒤 버튼을 눌러 촬영하세요!</p>
+          <p class="pb-shutter-hint" id="shutterHint" data-i18n="capture.hint.pick">
+            프레임을 선택한 뒤 버튼을 눌러 촬영하세요!
+          </p>
         </div>
       </section>
 
@@ -82,9 +85,11 @@
             </div>
           </div>
           <div class="pb-result-side">
-            <h2>멋진 사진이네요!</h2>
-            <p id="qrHint">아래 QR 코드를 스캔하여<br />휴대폰으로 사진을 받아보세요.</p>
-            <p class="pb-uploading" id="uploadStatus" hidden>업로드 중…</p>
+            <h2 data-i18n="capture.result.title">멋진 사진이네요!</h2>
+            <p id="qrHint" data-i18n-br="capture.result.qr">
+              아래 QR 코드를 스캔하여<br />휴대폰으로 사진을 받아보세요.
+            </p>
+            <p class="pb-uploading" id="uploadStatus" hidden data-i18n="capture.uploading">업로드 중…</p>
             <div class="pb-qr-wrap">
               <img id="qrImg" width="240" height="240" alt="사진 받기 QR" hidden />
               <span class="pb-qr-hit">HIT</span>
@@ -92,11 +97,11 @@
             <div class="pb-result-actions">
               <button type="button" class="pb-btn-retake" id="btnRetake">
                 <span class="material-symbols-outlined">refresh</span>
-                다시 촬영하기
+                <span data-i18n="capture.result.retake">다시 촬영하기</span>
               </button>
               <a class="pb-btn-home" href="index.html">
                 <span class="material-symbols-outlined">home</span>
-                처음으로 돌아가기
+                <span data-i18n="capture.result.home">처음으로 돌아가기</span>
               </a>
             </div>
           </div>
@@ -107,7 +112,7 @@
     <footer class="temi-shell-footer pb-help-footer">
       <div class="help-text">
         <span class="material-symbols-outlined">info</span>
-        <span>도움이 필요하신가요? 옆에 있는 스태프에게 문의해 주세요.</span>
+        <span data-i18n="help.text">도움이 필요하신가요? 옆에 있는 스태프에게 문의해 주세요.</span>
       </div>
       <div class="pb-lang-btns">
         <button type="button" class="is-active" id="btnLangKo">KOREAN</button>
@@ -214,7 +219,10 @@
           video.style.filter = f.css;
           shutter.disabled = false;
           frameBadge.textContent = f.badge;
-          document.getElementById("shutterHint").textContent = "버튼을 눌러 촬영하세요!";
+          document.getElementById("shutterHint").textContent =
+            window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
+              ? "Press the button to take a photo!"
+              : "버튼을 눌러 촬영하세요!";
           document.querySelectorAll(".pb-filter-btn").forEach(function (b) {
             b.classList.remove("is-active");
           });
@@ -223,7 +231,11 @@
 
         function startCamera() {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("이 환경에서는 카메라를 사용할 수 없습니다.");
+            alert(
+              window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
+                ? "Camera is not available in this environment."
+                : "이 환경에서는 카메라를 사용할 수 없습니다."
+            );
             return;
           }
           navigator.mediaDevices
@@ -235,13 +247,17 @@
               video.srcObject = stream;
             })
             .catch(function () {
-              alert("카메라 권한이 필요합니다. 브라우저·WebView 설정에서 허용해 주세요.");
+              alert(
+                window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
+                  ? "Camera permission is required. Please allow it in your settings."
+                  : "카메라 권한이 필요합니다. 브라우저·WebView 설정에서 허용해 주세요."
+              );
             });
         }
 
         function postSession() {
           return fetch("/api/photo-booth/sessions", { method: "POST" }).then(function (r) {
-            if (!r.ok) throw new Error("세션 생성 실패");
+            if (!r.ok) throw new Error("session");
             return r.json();
           });
         }
@@ -253,10 +269,25 @@
             method: "POST",
             body: fd,
           }).then(function (r) {
-            if (!r.ok) throw new Error("업로드 실패");
+            if (!r.ok) throw new Error("upload");
             return r.json();
           });
         }
+
+        document.getElementById("btnLangKo").addEventListener("click", function () {
+          window.TemiI18n && window.TemiI18n.setLang && window.TemiI18n.setLang("ko");
+        });
+        document.getElementById("btnLangEn").addEventListener("click", function () {
+          window.TemiI18n && window.TemiI18n.setLang && window.TemiI18n.setLang("en");
+        });
+
+        document.getElementById("btnNotify").addEventListener("click", function () {
+          alert(
+            window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
+              ? "No new notifications."
+              : "새 알림이 없습니다."
+          );
+        });
 
         function openResult(previewDataUrl) {
           capturedImg.src = previewDataUrl;
@@ -338,13 +369,7 @@
           if (state.filterPicked) shutter.disabled = false;
         });
 
-        document.getElementById("btnNotify").addEventListener("click", function () {
-          alert("새 알림이 없습니다.");
-        });
-
-        document.getElementById("btnLangEn").addEventListener("click", function () {
-          alert("English guide is coming soon.");
-        });
+        // 기존 데모 핸들러 제거(위에서 i18n 기반으로 등록됨)
 
         document.addEventListener("contextmenu", function (e) {
           e.preventDefault();

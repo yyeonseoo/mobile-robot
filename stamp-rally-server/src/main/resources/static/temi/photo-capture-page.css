@@ -48,20 +48,11 @@ body.temi-photo-capture .tl-nav a[href="photo-capture.html"] {
 }
 
 .pb-trainer-deco {
-  position: absolute;
-  right: 24px;
-  bottom: 0;
-  width: 280px;
-  font-size: 160px;
-  line-height: 1;
-  z-index: 5;
-  pointer-events: none;
-  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.3));
-  transition: transform 0.4s;
+  display: none;
 }
 
 .pb-viewport:hover .pb-trainer-deco {
-  transform: translateY(-16px);
+  transform: none;
 }
 
 .pb-hud {
@@ -414,7 +405,7 @@ body.temi-photo-capture .tl-nav a[href="photo-capture.html"] {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-card);
-  animation: pb-bounce 1s ease-in-out infinite;
+  animation: none;
 }
 
 @keyframes pb-bounce {

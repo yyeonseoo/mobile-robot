@@ -116,8 +116,6 @@
       </div>
     </main>
 
-    <div class="sr-mascot" aria-hidden="true">⚡</div>
-
     <script>
       (function () {
         var spotIcons = ["location_on", "sports_esports", "festival", "shopping_bag", "park", "store"];
@@ -152,6 +150,12 @@
               '</span><span>' +
               escapeHtml(s.name || s.code) +
               "</span>";
+            row.style.cursor = "pointer";
+            row.addEventListener("click", function () {
+              var label = String(s.name || s.code || "").trim();
+              if (!label) return;
+              location.href = "guide.html?open=" + encodeURIComponent(label);
+            });
             list.appendChild(row);
           });
         }

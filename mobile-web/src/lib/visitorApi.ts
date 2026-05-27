@@ -24,6 +24,14 @@ export type VisitorProfile = {
   quizXp: number
   photoCount: number
   recentChallenges: QuizChallengeRecord[]
+  eventActions?: VisitorEventAction[]
+}
+
+export type VisitorEventAction = {
+  id: number
+  eventId: string
+  actionType: 'reserve' | 'alarm' | string
+  createdAt: string
 }
 
 export function normalizePhoneInput(raw: string): string {
@@ -75,5 +83,22 @@ export async function uploadVisitorPhoto(dataUrl: string, kind = 'strip'): Promi
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ dataUrl, kind }),
+  })
+}
+
+export async function listEventActions(): Promise<VisitorEventAction[]> {
+  if (!getVisitorToken()) return []
+  return jsonFetch<VisitorEventAction[]>('/api/visitor/event-actions', { headers: authHeaders() })
+}
+
+export async function setEventAction(
+  eventId: string,
+  actionType: 'reserve' | 'alarm',
+  enabled: boolean
+): Promise<VisitorEventAction[]> {
+  return jsonFetch<VisitorEventAction[]>('/api/visitor/event-actions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ eventId, actionType, enabled }),
   })
 }

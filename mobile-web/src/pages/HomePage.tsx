@@ -168,20 +168,22 @@ export default function HomePage() {
               >
                 <div
                   className={
-                    'w-20 h-20 rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform ' +
+                    'w-24 h-24 rounded-full flex items-center justify-center mb-md group-hover:rotate-12 transition-transform ' +
                     style.ring +
                     ' ' +
                     style.shadow
                   }
                 >
                   <span
-                    className={'material-symbols-outlined text-5xl ' + style.iconClass}
+                    className={'material-symbols-outlined text-6xl ' + style.iconClass}
                     style={style.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
                   >
                     {tab.icon}
                   </span>
                 </div>
-                <span className="font-headline-md text-headline-md text-on-surface">{tab.label}</span>
+                <span className="font-headline-md text-[28px] leading-tight text-on-surface">
+                  {tab.label}
+                </span>
               </Link>
             )
           })}

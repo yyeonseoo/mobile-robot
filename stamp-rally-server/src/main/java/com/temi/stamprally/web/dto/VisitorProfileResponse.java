@@ -8,4 +8,5 @@ public record VisitorProfileResponse(
     String phoneNumber,
     int quizXp,
     long photoCount,
-    List<QuizChallengeRecordResponse> recentChallenges) {}
+    List<QuizChallengeRecordResponse> recentChallenges,
+    List<VisitorEventActionResponse> eventActions) {}

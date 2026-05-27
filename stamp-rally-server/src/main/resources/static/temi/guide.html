@@ -90,6 +90,10 @@
               <span class="material-symbols-outlined">sort</span>
               가까운 순 정렬
             </button>
+            <button type="button" class="gd-tool-btn gd-tool-btn--sort" id="btnSortAlpha">
+              <span class="material-symbols-outlined">sort_by_alpha</span>
+              ㄱㄴㄷ 순 정렬
+            </button>
             <button type="button" class="gd-tool-btn gd-tool-btn--map" id="btnScrollMap">
               <span class="material-symbols-outlined">map</span>
               전체 지도 보기
@@ -140,6 +144,22 @@
         var sortMode = "default";
         var activeNavZone = null;
 
+        function hash32(str) {
+          var s = String(str || "");
+          var h = 2166136261;
+          for (var i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i);
+            h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+          }
+          return h >>> 0;
+        }
+
+        function demoDistanceMeters(ex) {
+          // "랜덤"처럼 보이되 매번 고정(아이디 기반) + 너무 큰 값 방지
+          var base = hash32(ex && (ex.id || ex.name || ex.zone || ""));
+          return 120 + (base % 1800); // 120m ~ 1919m
+        }
+
         function origin() {
           return location.origin;
         }
@@ -168,7 +188,11 @@
           var list = exhibitions.slice();
           if (sortMode === "near") {
             list.sort(function (a, b) {
-              return (a.estimatedMinutes || 99) - (b.estimatedMinutes || 99);
+              return (a.demoDistance || 999999) - (b.demoDistance || 999999);
+            });
+          } else if (sortMode === "alpha") {
+            list.sort(function (a, b) {
+              return String(a.name || "").localeCompare(String(b.name || ""), "ko-KR");
             });
           }
           return list;
@@ -185,6 +209,10 @@
           list.forEach(function (ex) {
             var card = document.createElement("article");
             card.className = "gd-card";
+            var distLabel =
+              sortMode === "near" && ex.demoDistance
+                ? ' <span class="gd-dist">(약 ' + ex.demoDistance + "m)</span>"
+                : "";
             card.innerHTML =
               '<div class="gd-card-thumb ' +
               zoneThumbClass(ex.zone) +
@@ -192,6 +220,7 @@
               escapeHtml(ex.zone || "구역") +
               '</span></div><div class="gd-card-body"><h2>' +
               escapeHtml(ex.name) +
+              distLabel +
               '</h2><div class="gd-loc"><span class="material-symbols-outlined">location_on</span><span>' +
               escapeHtml(ex.locationText || "") +
               '</span></div><div class="gd-card-actions"><button type="button" class="gd-btn-go" data-goto="' +
@@ -273,8 +302,12 @@
               return r.json();
             })
             .then(function (rows) {
-              exhibitions = rows || [];
+              exhibitions = (rows || []).map(function (ex) {
+                ex.demoDistance = demoDistanceMeters(ex);
+                return ex;
+              });
               renderCards();
+              openFromQuery();
             })
             .catch(function () {
               document.getElementById("gdGrid").innerHTML =
@@ -282,14 +315,44 @@
             });
         }
 
+        function openFromQuery() {
+          try {
+            var q = new URLSearchParams(location.search).get("open") || "";
+            q = (q || "").trim();
+            if (!q) return;
+            var qq = q.toLowerCase();
+            var match = (exhibitions || []).find(function (ex) {
+              var name = String(ex.name || "").toLowerCase();
+              var loc = String(ex.locationText || "").toLowerCase();
+              var zone = String(ex.zone || "").toLowerCase();
+              return name.indexOf(qq) >= 0 || loc.indexOf(qq) >= 0 || zone.indexOf(qq) >= 0;
+            });
+            if (!match || !match.id) {
+              showToast("해당 장소의 상세 정보를 찾지 못했습니다.");
+              return;
+            }
+            location.href = "guide-detail.html?id=" + encodeURIComponent(match.id);
+          } catch (e) {
+            /* ignore */
+          }
+        }
+
         document.getElementById("btnSortNear").addEventListener("click", function () {
           sortMode = sortMode === "near" ? "default" : "near";
           document.getElementById("gdSubtitle").textContent =
             sortMode === "near"
-              ? "예상 이동 시간이 짧은 순으로 정렬했습니다."
+              ? "거리 기준으로 가까운 순 정렬했습니다."
               : "가까운 순으로 정렬된 전시 존을 확인하세요.";
           renderCards();
-          showToast(sortMode === "near" ? "가까운 순으로 정렬했습니다." : "기본 순서로 되돌렸습니다.");
+          showToast(sortMode === "near" ? "가까운 순 정렬" : "기본 순서로 되돌렸습니다.");
+        });
+
+        document.getElementById("btnSortAlpha").addEventListener("click", function () {
+          sortMode = sortMode === "alpha" ? "default" : "alpha";
+          document.getElementById("gdSubtitle").textContent =
+            sortMode === "alpha" ? "이름(ㄱㄴㄷ) 순으로 정렬했습니다." : "가까운 순으로 정렬된 전시 존을 확인하세요.";
+          renderCards();
+          showToast(sortMode === "alpha" ? "ㄱㄴㄷ 순 정렬" : "기본 순서로 되돌렸습니다.");
         });
 
         document.getElementById("btnScrollMap").addEventListener("click", function () {

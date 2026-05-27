@@ -26,6 +26,12 @@
 }
 
 :root {
+  /* 1920×1200 키오스크 프레임(브라우저 창이 더 커도 내부에 고정 배치) */
+  --frame-w: 1920px;
+  --frame-h: 1200px;
+  --frame-x: max(0px, (100vw - var(--frame-w)) / 2);
+  --frame-y: max(0px, (100vh - var(--frame-h)));
+
   --bg-deep: #0e1419;
   --bg-panel: #161d26;
   --accent-1: #2dd4bf;
@@ -209,9 +215,9 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
 
 .voice-dock {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: var(--frame-x);
+  right: var(--frame-x);
+  bottom: var(--frame-y);
   padding: 20px 96px 28px;
   display: flex;
   justify-content: center;

@@ -3,6 +3,12 @@
  */
 
 :root {
+  /* 1920×1200 키오스크 프레임(브라우저 창이 더 커도 내부에 고정 배치) */
+  --frame-w: 1920px;
+  --frame-h: 1200px;
+  --frame-x: max(0px, (100vw - var(--frame-w)) / 2);
+  --frame-y: max(0px, (100vh - var(--frame-h)));
+
   --bg: #f9f9f9;
   --on-bg: #1a1c1c;
   --primary: #745b00;
@@ -45,6 +51,7 @@ html.temi-landing-doc {
   max-height: 1200px;
   margin: 0 auto;
   overflow: hidden;
+  overflow-x: clip;
   scroll-behavior: smooth;
   background: var(--bg);
   color: var(--on-bg);
@@ -88,7 +95,7 @@ body.temi-landing .tl-home-scroll {
 }
 
 body.temi-landing .tl-home-scroll {
-  padding-bottom: 100px;
+  padding-bottom: 24px;
 }
 
 /* 지도 등: 바깥은 고정, 안쪽 컬럼만 스크롤 */
@@ -443,6 +450,8 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   flex: 1;
   padding: 28px;
   background: var(--surface-container-low);
+  display: flex;
+  flex-direction: column;
 }
 
 .tl-card-icon {
@@ -483,6 +492,11 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   font-size: 15px;
   color: var(--on-surface-variant);
   line-height: 1.45;
+  flex: 1;
+}
+
+.tl-card-cta {
+  margin-top: auto;
 }
 
 .tl-card-cta {
@@ -493,8 +507,8 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   border: 2px solid;
   background: #fff;
   font-family: var(--font-label);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -629,23 +643,24 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   text-decoration: underline;
 }
 
-/* ── Voice dock ── */
+/* ── Voice dock (footer 안 세로·가로 중앙) ── */
 .tl-voice-dock {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  bottom: 100px;
-  transform: translateX(-50%);
-  z-index: 45;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .tl-voice-btn {
-  padding: 16px 32px;
+  padding: 22px 52px;
+  min-height: 84px;
   border: none;
   border-radius: 999px;
   background: var(--on-bg);
   color: #fff;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   cursor: pointer;
   box-shadow: var(--shadow-lg);
 }
@@ -653,8 +668,8 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
 /* ── FAB ── */
 .tl-fab {
   position: fixed;
-  right: 40px;
-  bottom: 40px;
+  right: calc(var(--frame-x) + 40px);
+  bottom: calc(var(--frame-y) + 40px);
   z-index: 50;
   width: 80px;
   height: 80px;
@@ -702,9 +717,14 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   transform: translateX(-50%) translateY(0);
 }
 
-.tl-footer {
-  margin-top: 24px;
-  padding: 48px var(--margin);
+body.temi-landing .tl-footer {
+  flex-shrink: 0;
+  position: relative;
+  margin-top: 0;
+  min-height: 168px;
+  padding: 0 var(--margin);
+  display: flex;
+  align-items: center;
   background: var(--surface-container);
 }
 
@@ -712,6 +732,13 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   display: flex;
   justify-content: space-between;
   gap: 48px;
+  width: 100%;
+  max-width: calc(var(--frame-w) - var(--margin) * 2);
+  pointer-events: none;
+}
+
+.tl-footer-inner > * {
+  pointer-events: auto;
 }
 
 .tl-footer-brand {

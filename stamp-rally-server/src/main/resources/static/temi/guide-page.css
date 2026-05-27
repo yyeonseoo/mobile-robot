@@ -275,6 +275,14 @@ body.temi-guide .tl-nav a[href="guide.html"] {
   font-weight: 700;
 }
 
+.gd-dist {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--secondary);
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
 .gd-loc {
   display: flex;
   align-items: center;
@@ -560,8 +568,8 @@ body.temi-guide .tl-nav a[href="guide.html"] {
 
 .gd-toast {
   position: fixed;
-  left: 50%;
-  bottom: 32px;
+  left: calc(var(--frame-x) + (var(--frame-w) / 2));
+  bottom: calc(var(--frame-y) + 32px);
   transform: translateX(-50%) translateY(12px);
   opacity: 0;
   pointer-events: none;
