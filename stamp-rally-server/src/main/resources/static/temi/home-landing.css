@@ -639,6 +639,10 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
   text-decoration: none;
 }
 
+.tl-link-label {
+  transform: translateY(-4px);
+}
+
 .tl-link:hover {
   text-decoration: underline;
 }

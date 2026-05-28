@@ -47,6 +47,7 @@
       <section class="pb-camera-stage" id="cameraView" aria-label="카메라 촬영">
         <div class="pb-viewport">
           <video id="cam" playsinline autoplay muted aria-label="카메라 미리보기"></video>
+          <img id="frameOverlay" class="pb-frame-overlay" alt="" />
           <!-- 장식(둥둥 떠다니는 요소) 제거 -->
           <div class="pb-hud">
             <div>
@@ -125,6 +126,7 @@
     <script>
       (function () {
         var video = document.getElementById("cam");
+        var frameOverlay = document.getElementById("frameOverlay");
         var work = document.getElementById("work");
         var ctx = work.getContext("2d");
         var shutter = document.getElementById("shutter");
@@ -139,29 +141,27 @@
         var filters = [
           {
             id: "eevee",
-            label: "이브이 귀",
-            badge: "EEVEE EDITION",
-            iconClass: "pb-filter-icon--eevee",
-            emoji: "🦊",
-            css: "sepia(0.25) saturate(1.2) brightness(1.03)",
+            label: "루주라",
+            badge: "PHOTO FRAME 1",
+            src: "/mobile/app/filters/filter_overlay1.png",
           },
           {
             id: "pikachu",
-            label: "피카츄",
-            badge: "PIKACHU EDITION",
-            iconClass: "pb-filter-icon--pikachu",
-            emoji: "⚡",
-            css: "saturate(1.45) brightness(1.05) contrast(1.08)",
+            label: "파이리",
+            badge: "PHOTO FRAME 2",
+            src: "/mobile/app/filters/filter_overlay2.png",
           },
           {
             id: "snorlax",
-            label: "잠만보",
-            badge: "SNORLAX EDITION",
-            iconClass: "pb-filter-icon--snorlax",
-            emoji: "😴",
-            css: "saturate(0.95) brightness(1.06) hue-rotate(15deg)",
+            label: "피카츄",
+            badge: "PHOTO FRAME 3",
+            src: "/mobile/app/filters/filter_overlay3.png",
           },
         ];
+        filters.forEach(function (f) {
+          f.image = new Image();
+          f.image.src = f.src;
+        });
 
         var state = { filter: null, filterPicked: false };
 
@@ -173,18 +173,19 @@
           if (!video.videoWidth) return;
           var vw = video.videoWidth;
           var vh = video.videoHeight;
-          var scale = Math.min(w / vw, h / vh) * 0.92;
+          var scale = Math.max(w / vw, h / vh);
           var dw = vw * scale;
           var dh = vh * scale;
           var dx = (w - dw) / 2;
           var dy = (h - dh) / 2;
           ctx.save();
-          ctx.filter = state.filter ? state.filter.css : "none";
           ctx.translate(dx + dw, dy);
           ctx.scale(-1, 1);
           ctx.drawImage(video, 0, 0, vw, vh, 0, 0, dw, dh);
           ctx.restore();
-          ctx.filter = "none";
+          if (state.filter && state.filter.image && state.filter.image.complete) {
+            ctx.drawImage(state.filter.image, 0, 0, w, h);
+          }
         }
 
         function renderFilters() {
@@ -193,21 +194,19 @@
           filters.forEach(function (f, idx) {
             var btn = document.createElement("button");
             btn.type = "button";
-            btn.className = "pb-filter-btn" + (idx === 1 ? " is-active" : "");
+            btn.className = "pb-filter-btn" + (idx === 0 ? " is-active" : "");
             btn.setAttribute("data-filter", f.id);
             btn.innerHTML =
-              '<span class="pb-filter-icon ' +
-              f.iconClass +
-              '">' +
-              f.emoji +
-              "</span><span>" +
+              '<span class="pb-filter-icon"><img src="' +
+              f.src +
+              '" alt="" /></span><span>' +
               f.label +
               "</span>";
             btn.addEventListener("click", function () {
               pickFilter(f, btn);
             });
             list.appendChild(btn);
-            if (idx === 1) {
+            if (idx === 0) {
               pickFilter(f, btn);
             }
           });
@@ -216,7 +215,7 @@
         function pickFilter(f, btn) {
           state.filter = f;
           state.filterPicked = true;
-          video.style.filter = f.css;
+          frameOverlay.src = f.src;
           shutter.disabled = false;
           frameBadge.textContent = f.badge;
           document.getElementById("shutterHint").textContent =
@@ -227,6 +226,10 @@
             b.classList.remove("is-active");
           });
           btn.classList.add("is-active");
+          if (!f.image) {
+            f.image = new Image();
+            f.image.src = f.src;
+          }
         }
 
         function startCamera() {

@@ -71,10 +71,10 @@ const RECOMMEND_PRESETS = [
     reason: '이브이를 좋아하시니까 추천드려요!',
     time: '오늘 오후 3시',
     image: EEVEE_IMG,
-    thumbClass: 'bg-primary-fixed',
-    borderClass: 'border-primary/20 hover:border-primary/40',
-    btnClass: 'bg-primary text-on-primary',
-    chipClass: 'bg-secondary-fixed text-on-secondary-fixed',
+    thumbClass: 'bg-yellow-100',
+    borderClass: 'border-yellow-300/80 hover:border-yellow-400',
+    btnClass: 'bg-yellow-400 text-yellow-950 hover:bg-yellow-300',
+    chipClass: 'bg-yellow-100 text-yellow-950',
   },
   {
     id: 'battle',
@@ -606,7 +606,7 @@ export default function EventsPage() {
                 onKeyDown={(e) => e.key === 'Enter' && toggle(card.id, 'reserve')}
               >
                 {card.tag ? (
-                  <div className="absolute top-3 left-3 bg-primary text-white text-[10px] font-label-bold px-3 py-1 rounded-full z-10 shadow-md">
+                  <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-950 text-[10px] font-label-bold px-3 py-1 rounded-full z-10 shadow-md">
                     {card.tag}
                   </div>
                 ) : null}
