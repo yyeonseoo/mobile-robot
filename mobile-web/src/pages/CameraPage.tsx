@@ -340,7 +340,7 @@ export default function CameraPage() {
               >
                 <video
                   ref={attachVideo}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover [transform:scaleX(-1)]"
                   playsInline
                   muted
                   autoPlay
