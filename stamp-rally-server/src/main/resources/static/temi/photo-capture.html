@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta
       name="viewport"
-      content="width=1920, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"
     />
     <title>포토부스 촬영 | 포켓몬 페스티벌</title>
     <link rel="icon" href="data:," />
@@ -47,6 +47,46 @@
       <section class="pb-camera-stage" id="cameraView" aria-label="카메라 촬영">
         <div class="pb-viewport">
           <video id="cam" playsinline autoplay muted aria-label="카메라 미리보기"></video>
+
+          <img
+            id="nativePreview"
+            alt="Temi 카메라 미리보기"
+            hidden
+            style="
+              position: absolute;
+              inset: 0;
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              z-index: 1;
+              transform: rotate(180deg);
+              background: #111;
+            "
+          />
+
+          <div
+            id="nativeCameraNotice"
+            hidden
+            style="
+              position: absolute;
+              inset: 80px 80px 80px 80px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              text-align: center;
+              border: 4px dashed rgba(255, 255, 255, 0.8);
+              border-radius: 32px;
+              color: #ffffff;
+              font-size: 34px;
+              font-weight: 800;
+              background: rgba(0, 0, 0, 0.25);
+              z-index: 4;
+            "
+          >
+            Temi 네이티브 카메라 준비 중입니다<br />
+            잠시만 기다려 주세요
+          </div>
+
           <img id="frameOverlay" class="pb-frame-overlay" alt="" />
           <!-- 장식(둥둥 떠다니는 요소) 제거 -->
           <div class="pb-hud">
@@ -126,6 +166,7 @@
     <script>
       (function () {
         var video = document.getElementById("cam");
+        var nativePreview = document.getElementById("nativePreview");
         var frameOverlay = document.getElementById("frameOverlay");
         var work = document.getElementById("work");
         var ctx = work.getContext("2d");
@@ -136,6 +177,7 @@
         var qrImg = document.getElementById("qrImg");
         var frameBadge = document.getElementById("frameBadge");
         var uploadStatus = document.getElementById("uploadStatus");
+        var nativeCameraNotice = document.getElementById("nativeCameraNotice");
         var previewUrl = null;
 
         var filters = [
@@ -153,24 +195,50 @@
           },
           {
             id: "snorlax",
-            label: "피카츄",
+            label: "잠만보",
             badge: "PHOTO FRAME 3",
             src: "/mobile/app/filters/filter_overlay3.png",
           },
         ];
-        filters.forEach(function (f) {
-          f.image = new Image();
-          f.image.src = f.src;
-        });
 
-        var state = { filter: null, filterPicked: false };
+        var state = {
+          filter: null,
+          filterPicked: false,
+          nativeCamera: false,
+          busy: false,
+        };
 
-        function drawFrame() {
+        function isEnglish() {
+          return window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en";
+        }
+
+        function hasNativeCameraBridge() {
+          return !!(window.TemiBridge && typeof window.TemiBridge.takePhoto === "function");
+        }
+
+        function hasNativePreviewBridge() {
+          return !!(window.TemiBridge && typeof window.TemiBridge.startCameraPreview === "function");
+        }
+
+        function showNativeNotice(message) {
+          nativeCameraNotice.innerHTML = message;
+          nativeCameraNotice.hidden = false;
+          nativeCameraNotice.style.display = "flex";
+        }
+
+        function hideNativeNotice() {
+          nativeCameraNotice.hidden = true;
+          nativeCameraNotice.style.display = "none";
+        }
+
+        function drawVideoFrame() {
           var w = work.width;
           var h = work.height;
           ctx.fillStyle = "#111";
           ctx.fillRect(0, 0, w, h);
-          if (!video.videoWidth) return;
+
+          if (!video.videoWidth) return false;
+
           var vw = video.videoWidth;
           var vh = video.videoHeight;
           var scale = Math.max(w / vw, h / vh);
@@ -178,14 +246,66 @@
           var dh = vh * scale;
           var dx = (w - dw) / 2;
           var dy = (h - dh) / 2;
+
           ctx.save();
           ctx.translate(dx + dw, dy);
           ctx.scale(-1, 1);
           ctx.drawImage(video, 0, 0, vw, vh, 0, 0, dw, dh);
           ctx.restore();
+
           if (state.filter && state.filter.image && state.filter.image.complete) {
             ctx.drawImage(state.filter.image, 0, 0, w, h);
           }
+
+          return true;
+        }
+
+        function drawNativePhotoToBlob(dataUrl) {
+          return new Promise(function (resolve, reject) {
+            var img = new Image();
+
+            img.onload = function () {
+              var w = work.width;
+              var h = work.height;
+
+              ctx.fillStyle = "#111";
+              ctx.fillRect(0, 0, w, h);
+
+              var iw = img.naturalWidth || img.width;
+              var ih = img.naturalHeight || img.height;
+              var scale = Math.max(w / iw, h / ih);
+              var dw = iw * scale;
+              var dh = ih * scale;
+              var dx = (w - dw) / 2;
+              var dy = (h - dh) / 2;
+
+              ctx.save();
+              ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
+              ctx.restore();
+
+              if (state.filter && state.filter.image && state.filter.image.complete) {
+                ctx.drawImage(state.filter.image, 0, 0, w, h);
+              }
+
+              work.toBlob(
+                function (blob) {
+                  if (!blob) {
+                    reject(new Error(isEnglish() ? "Image conversion failed." : "이미지 변환 실패"));
+                    return;
+                  }
+                  resolve(blob);
+                },
+                "image/png",
+                0.92
+              );
+            };
+
+            img.onerror = function () {
+              reject(new Error(isEnglish() ? "Failed to load the captured image." : "네이티브 촬영 이미지를 불러오지 못했습니다."));
+            };
+
+            img.src = dataUrl;
+          });
         }
 
         function renderFilters() {
@@ -216,12 +336,11 @@
           state.filter = f;
           state.filterPicked = true;
           frameOverlay.src = f.src;
-          shutter.disabled = false;
+          shutter.disabled = state.busy ? true : false;
           frameBadge.textContent = f.badge;
-          document.getElementById("shutterHint").textContent =
-            window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
-              ? "Press the button to take a photo!"
-              : "버튼을 눌러 촬영하세요!";
+          document.getElementById("shutterHint").textContent = isEnglish()
+            ? "Press the button to take a photo!"
+            : "버튼을 눌러 촬영하세요!";
           document.querySelectorAll(".pb-filter-btn").forEach(function (b) {
             b.classList.remove("is-active");
           });
@@ -232,15 +351,31 @@
           }
         }
 
-        function startCamera() {
+        function startNativeCameraMode() {
+          state.nativeCamera = true;
+          video.hidden = true;
+          nativePreview.hidden = false;
+          showNativeNotice(
+            isEnglish()
+              ? "Preparing Temi native camera<br />Please wait"
+              : "Temi 네이티브 카메라 준비 중입니다<br />잠시만 기다려 주세요"
+          );
+          shutter.disabled = !state.filterPicked;
+          document.getElementById("shutterHint").textContent = isEnglish()
+            ? "Taking photos with Temi native camera."
+            : "Temi 네이티브 카메라로 촬영합니다.";
+
+          if (hasNativePreviewBridge()) {
+            window.TemiBridge.startCameraPreview();
+          }
+        }
+
+        function startWebCameraMode() {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert(
-              window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
-                ? "Camera is not available in this environment."
-                : "이 환경에서는 카메라를 사용할 수 없습니다."
-            );
+            hideNativeNotice();
             return;
           }
+
           navigator.mediaDevices
             .getUserMedia({
               video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -248,14 +383,34 @@
             })
             .then(function (stream) {
               video.srcObject = stream;
+              shutter.disabled = !state.filterPicked;
             })
             .catch(function () {
               alert(
-                window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
+                isEnglish()
                   ? "Camera permission is required. Please allow it in your settings."
                   : "카메라 권한이 필요합니다. 브라우저·WebView 설정에서 허용해 주세요."
               );
             });
+        }
+
+        function startCamera() {
+          // Android WebView의 TemiBridge 주입이 늦을 수 있으므로 잠깐 기다렸다가 판단한다.
+          var tries = 0;
+          var timer = setInterval(function () {
+            tries += 1;
+
+            if (hasNativeCameraBridge()) {
+              clearInterval(timer);
+              startNativeCameraMode();
+              return;
+            }
+
+            if (tries >= 10) {
+              clearInterval(timer);
+              startWebCameraMode();
+            }
+          }, 300);
         }
 
         function postSession() {
@@ -285,11 +440,7 @@
         });
 
         document.getElementById("btnNotify").addEventListener("click", function () {
-          alert(
-            window.TemiI18n && window.TemiI18n.getLang && window.TemiI18n.getLang() === "en"
-              ? "No new notifications."
-              : "새 알림이 없습니다."
-          );
+          alert(isEnglish() ? "No new notifications." : "새 알림이 없습니다.");
         });
 
         function openResult(previewDataUrl) {
@@ -311,59 +462,159 @@
           uploadStatus.hidden = true;
         }
 
+        function processCapturedBlob(blob) {
+          if (!blob) {
+            state.busy = false;
+            shutter.disabled = false;
+            return;
+          }
+
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          previewUrl = URL.createObjectURL(blob);
+          openResult(previewUrl);
+          uploadStatus.hidden = false;
+          uploadStatus.textContent = isEnglish() ? "Uploading..." : "업로드 중…";
+
+          postSession()
+            .then(function (data) {
+              return postPhoto(data.token, blob).then(function () {
+                return data.token;
+              });
+            })
+            .then(function (token) {
+              qrImg.src =
+                "/api/photo-booth/sessions/" +
+                encodeURIComponent(token) +
+                "/qr.png?t=" +
+                Date.now();
+              qrImg.hidden = false;
+              uploadStatus.textContent = isEnglish()
+                ? "Scan the QR code to download your photo."
+                : "QR을 스캔해 폰으로 사진을 받으세요.";
+            })
+            .catch(function (e) {
+              uploadStatus.textContent = isEnglish()
+                ? "Upload failed. Please try again."
+                : "업로드 실패. 다시 촬영해 주세요.";
+              alert(e.message || (isEnglish() ? "Something went wrong." : "오류가 났습니다."));
+            })
+            .finally(function () {
+              state.busy = false;
+              shutter.disabled = false;
+            });
+        }
+
+        function snapWithWebCamera() {
+          if (!video.videoWidth) {
+            alert(isEnglish() ? "Please wait until the camera is ready." : "카메라가 준비될 때까지 잠시만 기다려 주세요.");
+            state.busy = false;
+            shutter.disabled = false;
+            return;
+          }
+
+          if (!drawVideoFrame()) {
+            alert(isEnglish() ? "Failed to capture camera frame." : "카메라 프레임을 가져오지 못했습니다.");
+            state.busy = false;
+            shutter.disabled = false;
+            return;
+          }
+
+          work.toBlob(
+            function (blob) {
+              processCapturedBlob(blob);
+            },
+            "image/png",
+            0.92
+          );
+        }
+
+        function snapWithNativeCamera() {
+          if (!hasNativeCameraBridge()) {
+            alert(isEnglish() ? "Temi native camera bridge was not found." : "Temi 네이티브 카메라 연결을 찾지 못했습니다.");
+            state.busy = false;
+            shutter.disabled = false;
+            return;
+          }
+
+          uploadStatus.hidden = false;
+          uploadStatus.textContent = isEnglish() ? "Taking photo with Temi camera..." : "Temi 카메라 촬영 중…";
+          window.TemiBridge.takePhoto();
+        }
+
         function snap() {
           if (!state.filterPicked) {
-            alert("먼저 프레임을 선택해 주세요.");
+            alert(isEnglish() ? "Please select a frame first." : "먼저 프레임을 선택해 주세요.");
             return;
           }
-          if (!video.videoWidth) {
-            alert("카메라가 준비될 때까지 잠시만 기다려 주세요.");
+
+          if (state.busy) {
             return;
           }
+
+          state.busy = true;
+          shutter.disabled = true;
 
           flash.classList.add("is-on");
+
           setTimeout(function () {
             flash.classList.remove("is-on");
-            drawFrame();
-            shutter.disabled = true;
 
-            work.toBlob(
-              function (blob) {
-                if (!blob) {
-                  shutter.disabled = false;
-                  return;
-                }
-                if (previewUrl) URL.revokeObjectURL(previewUrl);
-                previewUrl = URL.createObjectURL(blob);
-                openResult(previewUrl);
-                uploadStatus.hidden = false;
-                uploadStatus.textContent = "업로드 중…";
-
-                postSession()
-                  .then(function (data) {
-                    return postPhoto(data.token, blob).then(function () {
-                      return data.token;
-                    });
-                  })
-                  .then(function (token) {
-                    qrImg.src =
-                      "/api/photo-booth/sessions/" +
-                      encodeURIComponent(token) +
-                      "/qr.png?t=" +
-                      Date.now();
-                    qrImg.hidden = false;
-                    uploadStatus.textContent = "QR을 스캔해 폰으로 사진을 받으세요.";
-                  })
-                  .catch(function (e) {
-                    uploadStatus.textContent = "업로드 실패. 다시 촬영해 주세요.";
-                    alert(e.message || "오류가 났습니다.");
-                  });
-              },
-              "image/png",
-              0.92
-            );
+            if (state.nativeCamera || hasNativeCameraBridge()) {
+              snapWithNativeCamera();
+            } else {
+              snapWithWebCamera();
+            }
           }, 120);
         }
+
+        window.addEventListener("temi:photo-preview", function (event) {
+          var detail = event.detail || {};
+          if (!detail.dataUrl) return;
+
+          nativePreview.src = detail.dataUrl;
+          nativePreview.hidden = false;
+          hideNativeNotice();
+        });
+
+        window.addEventListener("temi:photo-result", function (event) {
+          var detail = event.detail || {};
+
+          if (!detail.ok) {
+            if (detail.message) {
+              uploadStatus.hidden = false;
+              uploadStatus.textContent = detail.message;
+            }
+
+            if (
+              detail.message &&
+              (detail.message.indexOf("권한 요청") >= 0 ||
+                detail.message.indexOf("촬영 시작") >= 0 ||
+                detail.message.indexOf("촬영 중") >= 0 ||
+                detail.message.indexOf("권한 승인") >= 0 ||
+                detail.message.indexOf("미리보기") >= 0 ||
+                detail.message.indexOf("준비 완료") >= 0 ||
+                detail.message.indexOf("preview") >= 0)
+            ) {
+              return;
+            }
+
+            state.busy = false;
+            shutter.disabled = false;
+            return;
+          }
+
+          drawNativePhotoToBlob(detail.dataUrl)
+            .then(function (blob) {
+              processCapturedBlob(blob);
+            })
+            .catch(function (e) {
+              state.busy = false;
+              shutter.disabled = false;
+              uploadStatus.hidden = false;
+              uploadStatus.textContent = e.message || (isEnglish() ? "Photo processing failed." : "사진 처리 실패");
+              alert(e.message || (isEnglish() ? "Photo processing failed." : "사진 처리 실패"));
+            });
+        });
 
         shutter.addEventListener("click", snap);
 
@@ -371,8 +622,6 @@
           closeResult();
           if (state.filterPicked) shutter.disabled = false;
         });
-
-        // 기존 데모 핸들러 제거(위에서 i18n 기반으로 등록됨)
 
         document.addEventListener("contextmenu", function (e) {
           e.preventDefault();

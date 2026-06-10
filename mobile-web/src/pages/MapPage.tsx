@@ -241,9 +241,7 @@ export default function MapPage() {
             <p className="font-label-bold text-on-primary-fixed-variant uppercase text-xs tracking-wider mb-1">
               길을 잃으셨나요? 파트너를 부르세요!
             </p>
-            <h3 className="font-headline-md text-[30px] leading-tight text-on-primary-fixed">
-              테미 부르기
-            </h3>
+            <h3 className="font-headline-md text-headline-md text-on-primary-fixed">테미 부르기</h3>
           </div>
           <div className="w-16 h-16 bg-white/40 rounded-full flex items-center justify-center">
             <span

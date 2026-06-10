@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
@@ -63,6 +63,9 @@ export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const cameraEpochRef = useRef(0)
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [liveOverlay, setLiveOverlay] = useState({ top: 0, height: 0, width: 0 })
   const completedStripRef = useRef('')
   const [err, setErr] = useState(() =>
     typeof navigator !== 'undefined' && !navigator.mediaDevices?.getUserMedia
@@ -73,7 +76,6 @@ export default function CameraPage() {
   const [shots, setShots] = useState<(string | null)[]>([null, null, null, null])
   const [recent, setRecent] = useState<string[]>([])
   const [missingFilters, setMissingFilters] = useState<Record<string, boolean>>({})
-  const [videoAspect, setVideoAspect] = useState(16 / 9)
 
   const filterChoices = useMemo<FilterChoice[]>(
     () => [
@@ -100,11 +102,20 @@ export default function CameraPage() {
   const overlayImg = 'img' in selectedFilterChoice ? selectedFilterChoice.img : ''
   const showFallbackOverlay =
     selectedFilter !== 'none' && (!overlayImg || missingFilters[selectedFilter])
-  const slotAspect = 4 / 3
-  const liveMediaStyle =
-    videoAspect >= slotAspect
-      ? { height: '100%', width: `${(videoAspect / slotAspect) * 100}%` }
-      : { width: '100%', height: `${(slotAspect / videoAspect) * 100}%` }
+
+  useLayoutEffect(() => {
+    if (!showLivePreview) return
+    const frame = frameRef.current
+    const slot = slotRefs.current[nextShotIndex]
+    if (!frame || !slot) return
+    const fr = frame.getBoundingClientRect()
+    const sr = slot.getBoundingClientRect()
+    setLiveOverlay({
+      top: sr.top - fr.top,
+      height: sr.height,
+      width: sr.width,
+    })
+  }, [showLivePreview, nextShotIndex, shots, selectedFilter, overlayImg])
 
   function selectFilter(id: string) {
     setMissingFilters((prev) => {
@@ -296,50 +307,20 @@ export default function CameraPage() {
 
         <section className="flex flex-col items-center">
 
-          <div className="four-cut-frame relative rounded-xl p-4 w-full max-w-[320px] shadow-2xl flex flex-col gap-3 pokemon-card-shadow">
+          <div
+            ref={frameRef}
+            className="four-cut-frame relative rounded-xl p-4 w-full max-w-[320px] shadow-2xl flex flex-col gap-3 pokemon-card-shadow"
+          >
             {shots.map((shot, idx) => (
               <div
                 key={idx}
+                ref={(el) => {
+                  slotRefs.current[idx] = el
+                }}
                 className="relative aspect-[4/3] bg-slate-200 overflow-hidden rounded-sm border-2 border-primary/20"
               >
                 {shot ? (
                   <img src={shot} alt={`컷 ${idx + 1}`} className="w-full h-full object-cover" />
-                ) : idx === nextShotIndex && showLivePreview ? (
-                  <div className="absolute inset-0 overflow-hidden">
-                    <div
-                      className="absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2"
-                      style={liveMediaStyle}
-                    >
-                      <video
-                        ref={attachVideo}
-                        className="h-full w-full object-fill [transform:scaleX(-1)]"
-                        playsInline
-                        muted
-                        autoPlay
-                        onLoadedMetadata={(e) => {
-                          const video = e.currentTarget
-                          if (video.videoWidth && video.videoHeight) {
-                            setVideoAspect(video.videoWidth / video.videoHeight)
-                          }
-                        }}
-                      />
-                      {showFallbackOverlay ? (
-                        <div className="absolute inset-0">
-                          <div className="absolute left-0 right-0 top-[8%] h-[8%] bg-slate-950/90" />
-                          <div className="absolute left-0 right-0 bottom-[8%] h-[8%] bg-slate-950/90" />
-                          <div className="absolute left-[10%] top-[20%] h-12 w-12 rounded-full bg-emerald-300/80" />
-                          <div className="absolute right-[12%] bottom-[20%] h-14 w-14 rounded-full bg-orange-300/80" />
-                        </div>
-                      ) : overlayImg ? (
-                        <img
-                          src={overlayImg}
-                          alt=""
-                          className="absolute inset-0 h-full w-full object-fill"
-                          onError={() => setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))}
-                        />
-                      ) : null}
-                    </div>
-                  </div>
                 ) : idx !== nextShotIndex ? (
                   <div className="w-full h-full bg-white/50 flex items-center justify-center border-2 border-primary/10">
                     <span className="material-symbols-outlined text-primary/30 text-4xl">photo_camera</span>
@@ -347,6 +328,40 @@ export default function CameraPage() {
                 ) : null}
               </div>
             ))}
+
+            {showLivePreview ? (
+              <div
+                className="pointer-events-none absolute left-4 overflow-hidden rounded-sm border-2 border-primary/20 z-10"
+                style={{
+                  top: liveOverlay.top,
+                  width: liveOverlay.width || 'calc(100% - 2rem)',
+                  height: liveOverlay.height || undefined,
+                }}
+              >
+                <video
+                  ref={attachVideo}
+                  className="h-full w-full object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                {showFallbackOverlay ? (
+                  <div className="absolute inset-0">
+                    <div className="absolute left-0 right-0 top-[8%] h-[8%] bg-slate-950/90" />
+                    <div className="absolute left-0 right-0 bottom-[8%] h-[8%] bg-slate-950/90" />
+                    <div className="absolute left-[10%] top-[20%] h-12 w-12 rounded-full bg-emerald-300/80" />
+                    <div className="absolute right-[12%] bottom-[20%] h-14 w-14 rounded-full bg-orange-300/80" />
+                  </div>
+                ) : overlayImg ? (
+                  <img
+                    src={overlayImg}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-fill"
+                    onError={() => setMissingFilters((prev) => ({ ...prev, [selectedFilter]: true }))}
+                  />
+                ) : null}
+              </div>
+            ) : null}
             <div className="flex justify-between items-center px-1 pt-1">
               <span className="text-primary font-black text-xs">POKEGUIDE PHOTO</span>
               <span

@@ -759,3 +759,168 @@ body.temi-landing .tl-footer {
   font-size: 14px;
   color: var(--on-surface-variant);
 }
+
+
+/* ===== Temi/WebView responsive fix - preserve local patch ===== */
+html.temi-landing-doc {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+html.temi-landing-doc body.temi-landing {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+body.temi-landing .temi-scroll,
+body.temi-landing .tl-home-scroll {
+  width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.tl-header {
+  width: 100% !important;
+  padding-left: clamp(20px, 3vw, 40px) !important;
+  padding-right: clamp(20px, 3vw, 40px) !important;
+}
+
+.tl-brand {
+  font-size: clamp(20px, 2vw, 28px) !important;
+  white-space: nowrap !important;
+}
+
+.tl-nav {
+  gap: clamp(16px, 3vw, 40px) !important;
+}
+
+.tl-nav a {
+  font-size: clamp(14px, 1.5vw, 18px) !important;
+  white-space: nowrap !important;
+}
+
+.tl-header-actions {
+  display: none !important;
+}
+
+.tl-hero-wrap,
+.tl-section,
+.tl-stats,
+.tl-footer {
+  padding-left: clamp(20px, 3vw, 48px) !important;
+  padding-right: clamp(20px, 3vw, 48px) !important;
+}
+
+.tl-hero {
+  min-height: 360px !important;
+  padding: clamp(28px, 4vw, 56px) !important;
+  gap: 28px !important;
+}
+
+.tl-hero-copy {
+  max-width: 62% !important;
+}
+
+.tl-hero h1 {
+  font-size: clamp(36px, 4vw, 56px) !important;
+}
+
+.tl-hero p {
+  font-size: clamp(16px, 1.8vw, 20px) !important;
+}
+
+.tl-hero-visual {
+  flex: 0 0 clamp(260px, 28vw, 420px) !important;
+}
+
+.tl-hero-art {
+  width: clamp(240px, 25vw, 380px) !important;
+  height: clamp(240px, 25vw, 380px) !important;
+}
+
+.tl-bento {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  width: 100% !important;
+}
+
+.tl-card {
+  min-width: 0 !important;
+}
+
+.tl-card-thumb {
+  height: clamp(120px, 13vw, 200px) !important;
+}
+
+.tl-card-body {
+  padding: clamp(18px, 2vw, 28px) !important;
+}
+
+.tl-card h3 {
+  font-size: clamp(18px, 1.8vw, 24px) !important;
+}
+
+.tl-card p {
+  font-size: clamp(13px, 1.2vw, 15px) !important;
+}
+
+.tl-stats {
+  grid-template-columns: 2fr 1fr !important;
+}
+
+@media (max-width: 1500px) {
+  .tl-hero-copy {
+    max-width: 100% !important;
+  }
+
+  .tl-hero-visual {
+    display: none !important;
+  }
+
+  .tl-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tl-stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .tl-header {
+    height: auto !important;
+    min-height: 80px !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .tl-nav {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .tl-bento {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tl-voice-dock {
+    bottom: 24px !important;
+  }
+
+  .tl-fab {
+    right: 20px !important;
+    bottom: 20px !important;
+  }
+}
