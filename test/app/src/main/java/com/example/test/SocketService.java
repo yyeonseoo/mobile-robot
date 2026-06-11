@@ -16,6 +16,7 @@ public class SocketService {
     public interface CommandListener {
         void onGotoRequested(String locationId);
         void onStopRequested();
+        void onPhotoBoothRequested();
     }
 
     private static final String TAG = "SocketService";
@@ -34,7 +35,10 @@ public class SocketService {
     }
 
     public void connect() {
-        if (socket != null && socket.connected()) {
+        if (socket != null) {
+            if (!socket.connected()) {
+                socket.connect();
+            }
             return;
         }
 
@@ -84,6 +88,15 @@ public class SocketService {
                 }
             });
 
+            socket.on("temi:photo_booth_start", args -> {
+                Log.d(TAG, "Command received temi:photo_booth_start");
+
+                CommandListener listener = commandListener;
+                if (listener != null) {
+                    mainHandler.post(listener::onPhotoBoothRequested);
+                }
+            });
+
             socket.connect();
 
         } catch (URISyntaxException e) {
@@ -101,7 +114,23 @@ public class SocketService {
         try {
             if (first instanceof JSONObject) {
                 JSONObject json = (JSONObject) first;
-                return json.optString("locationId", json.optString("target", "")).trim();
+
+                String locationId = json.optString("locationId", "").trim();
+                if (!locationId.isEmpty()) {
+                    return locationId;
+                }
+
+                String target = json.optString("target", "").trim();
+                if (!target.isEmpty()) {
+                    return target;
+                }
+
+                String destination = json.optString("destination", "").trim();
+                if (!destination.isEmpty()) {
+                    return destination;
+                }
+
+                return "";
             }
 
             return String.valueOf(first).trim();

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/mobile/app/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>POKÉGUIDE</title>
+    <title>POKÉGUIDE - Pokemon Preview</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,7 +15,1437 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/mobile/app/assets/index-BfF8YYiq.js"></script>
+    
+
+
+<script>
+/*
+  Stamp Rally Safe API Sync v4
+  - 흰화면/렉 방지를 위해 MutationObserver, DOM 전체 탐색, 번들 직접수정을 쓰지 않는다.
+  - React가 원래 호출하는 API 응답만 localStorage 스탬프 상태와 맞춰준다.
+*/
+(function () {
+  if (window.__temiStampSafeApiSyncV4) return;
+  window.__temiStampSafeApiSyncV4 = true;
+
+  var CLAIMS_KEY = "temi:stampClaims";
+  var STATUS_KEY = "temi:stampStatus";
+  var TOKEN_KEY = "stampRallyVisitorToken";
+  var NICK_KEY = "stampRallyNickname";
+
+  var SPOTS = [
+    { code: "RALLY-1", spotCode: "RALLY-1", spotName: "A 구역", name: "A 구역" },
+    { code: "RALLY-2", spotCode: "RALLY-2", spotName: "B 구역", name: "B 구역" },
+    { code: "RALLY-3", spotCode: "RALLY-3", spotName: "C 구역", name: "C 구역" },
+    { code: "RALLY-4", spotCode: "RALLY-4", spotName: "D 구역", name: "D 구역" }
+  ];
+
+  function now() {
+    return new Date().toISOString();
+  }
+
+  function normalizeCode(raw) {
+    var value = String(raw || "").trim();
+    if (!value) return "";
+
+    try {
+      var parsed = new URL(value.indexOf("://") >= 0 ? value : window.location.origin + value);
+      var claim = parsed.searchParams.get("claim");
+      if (claim && claim.trim()) value = claim.trim();
+    } catch (e) {}
+
+    var compact = value.replace(/\s+/g, "").toUpperCase();
+
+    if (compact === "1" || compact === "A" || compact === "ZONE_A" || compact === "RALLY1" || compact === "STAMP1") return "RALLY-1";
+    if (compact === "2" || compact === "B" || compact === "ZONE_B" || compact === "RALLY2" || compact === "STAMP2") return "RALLY-2";
+    if (compact === "3" || compact === "C" || compact === "ZONE_C" || compact === "RALLY3" || compact === "STAMP3") return "RALLY-3";
+    if (compact === "4" || compact === "D" || compact === "ZONE_D" || compact === "RALLY4" || compact === "STAMP4") return "RALLY-4";
+
+    if (/^RALLY-\d+$/i.test(compact)) return compact;
+    return compact;
+  }
+
+  function spotOf(code) {
+    code = normalizeCode(code);
+    return SPOTS.find(function (s) { return s.code === code; }) || null;
+  }
+
+  function ensureSession() {
+    try {
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        localStorage.setItem(TOKEN_KEY, "local-stamp-rally-" + Date.now());
+      }
+      if (!localStorage.getItem(NICK_KEY)) {
+        localStorage.setItem(NICK_KEY, "모바일 참가자");
+      }
+    } catch (e) {}
+  }
+
+  function readClaims() {
+    var map = {};
+
+    function add(item) {
+      if (!item) return;
+      var code = normalizeCode(item.code || item.spotCode || item.qrValue || item.claim);
+      var spot = spotOf(code);
+      if (!spot) return;
+
+      map[spot.code] = {
+        code: spot.code,
+        spotCode: spot.code,
+        spotName: item.spotName || spot.spotName,
+        name: item.name || spot.name,
+        qrValue: item.qrValue || spot.code,
+        claimedAt: item.claimedAt || item.receivedAt || item.updatedAt || now()
+      };
+    }
+
+    try {
+      var raw = localStorage.getItem(CLAIMS_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) parsed.forEach(add);
+    } catch (e) {}
+
+    try {
+      var rawStatus = localStorage.getItem(STATUS_KEY);
+      var status = rawStatus ? JSON.parse(rawStatus) : null;
+      if (status && Array.isArray(status.claims)) status.claims.forEach(add);
+      if (status && status.last) add(status.last);
+    } catch (e) {}
+
+    return SPOTS.map(function (s) { return map[s.code]; }).filter(Boolean);
+  }
+
+  function writeClaims(claims) {
+    claims = Array.isArray(claims) ? claims : [];
+    try {
+      localStorage.setItem(CLAIMS_KEY, JSON.stringify(claims));
+      localStorage.setItem(STATUS_KEY, JSON.stringify(statusOf(claims)));
+    } catch (e) {}
+  }
+
+  function claim(code) {
+    ensureSession();
+
+    var spot = spotOf(code);
+    if (!spot) return readClaims();
+
+    var claims = readClaims();
+    var item = {
+      code: spot.code,
+      spotCode: spot.code,
+      spotName: spot.spotName,
+      name: spot.name,
+      qrValue: spot.code,
+      claimedAt: now()
+    };
+
+    var exists = claims.some(function (x) { return normalizeCode(x.code || x.spotCode) === spot.code; });
+    if (exists) {
+      claims = claims.map(function (x) {
+        return normalizeCode(x.code || x.spotCode) === spot.code ? Object.assign({}, x, item) : x;
+      });
+    } else {
+      claims.push(item);
+    }
+
+    claims.sort(function (a, b) {
+      return SPOTS.findIndex(function (s) { return s.code === normalizeCode(a.code || a.spotCode); }) -
+             SPOTS.findIndex(function (s) { return s.code === normalizeCode(b.code || b.spotCode); });
+    });
+
+    writeClaims(claims);
+    return claims;
+  }
+
+  function statusOf(claims) {
+    claims = Array.isArray(claims) ? claims : readClaims();
+
+    return {
+      totalSpots: 4,
+      total: 4,
+      collectedCount: claims.length,
+      completed: claims.length >= 4,
+      rallyComplete: claims.length >= 4,
+      claims: claims,
+      last: claims[claims.length - 1] || null,
+      updatedAt: now()
+    };
+  }
+
+  function remainingSpots() {
+    var owned = {};
+    readClaims().forEach(function (x) {
+      owned[normalizeCode(x.code || x.spotCode)] = true;
+    });
+
+    return SPOTS.filter(function (s) { return !owned[s.code]; });
+  }
+
+  function response(data) {
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  function parseBody(init) {
+    try {
+      if (!init || !init.body) return {};
+      if (typeof init.body === "string") return JSON.parse(init.body);
+      if (init.body instanceof FormData) {
+        return {
+          qrValue: init.body.get("qrValue") || init.body.get("claim") || init.body.get("code") || init.body.get("spotCode")
+        };
+      }
+    } catch (e) {}
+    return {};
+  }
+
+  function emitSocketUpdate(code, claims) {
+    var st = statusOf(claims);
+
+    var payload = {
+      type: "stamp_update",
+      source: "safe-api-sync",
+      code: code,
+      qrValue: code,
+      result: st,
+      updatedAt: now()
+    };
+
+    try {
+      window.dispatchEvent(new CustomEvent("app:stamp_update", { detail: payload }));
+    } catch (e) {}
+
+    if (window.TemiAppSocket && window.TemiAppSocket.emit) {
+      window.TemiAppSocket.emit("app:stamp_update", payload, function (ack) {
+        console.log("[Stamp Safe API] app:stamp_update ack", ack);
+      });
+    }
+  }
+
+  ensureSession();
+
+  // direct claim은 React가 뜨기 전 localStorage에 먼저 반영
+  try {
+    var urlClaim = new URLSearchParams(window.location.search).get("claim");
+    if (urlClaim) {
+      var code = normalizeCode(urlClaim);
+      var claims = claim(code);
+      emitSocketUpdate(code, claims);
+    }
+  } catch (e) {}
+
+  if (window.fetch && !window.fetch.__temiStampSafeApiSyncV4) {
+    var realFetch = window.fetch.bind(window);
+
+    window.fetch = function (input, init) {
+      var url = "";
+      try {
+        url = typeof input === "string" ? input : input && input.url ? input.url : "";
+      } catch (e) {}
+
+      var method = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
+      var path = url;
+
+      try {
+        path = new URL(url, window.location.origin).pathname;
+      } catch (e) {}
+
+      if (path === "/api/rally/meta") {
+        return Promise.resolve(response({
+          totalSpots: 4,
+          spots: SPOTS
+        }));
+      }
+
+      if (path === "/api/rally/status") {
+        return Promise.resolve(response(statusOf()));
+      }
+
+      if (path === "/api/my-stamps") {
+        return Promise.resolve(response(readClaims()));
+      }
+
+      if (path === "/api/spots") {
+        return Promise.resolve(response(remainingSpots()));
+      }
+
+      if (path === "/api/stamps/claim" && method === "POST") {
+        var body = parseBody(init);
+        var code = normalizeCode(body.qrValue || body.claim || body.code || body.spotCode);
+        var claims = claim(code);
+        emitSocketUpdate(code, claims);
+
+        var st = statusOf(claims);
+        return Promise.resolve(response({
+          ok: true,
+          code: code,
+          spotCode: code,
+          spotName: (spotOf(code) || {}).spotName || code,
+          collectedCount: st.collectedCount,
+          totalSpots: st.totalSpots,
+          completed: st.completed,
+          rallyComplete: st.completed
+        }));
+      }
+
+      return realFetch(input, init);
+    };
+
+    window.fetch.__temiStampSafeApiSyncV4 = true;
+  }
+
+  console.log("[Stamp Safe API] ready", statusOf());
+})();
+</script>
+
+<script>
+/*
+  Temi Mobile App Global Socket Singleton v3
+  목적:
+  - 모바일웹 전체에서 app socket 1개만 공유
+  - 사진 결과 페이지 이동/브라우저 닫힘/백그라운드 진입 때 무한 재연결 방지
+  - component unmount가 호출하는 disconnect는 무시하지만,
+    pagehide/beforeunload/hidden 상태에서는 실제 disconnect 수행
+*/
+(function () {
+  if (window.TemiAppSocket && window.TemiAppSocket.__version === "v3") return;
+
+  var SOCKET_SCRIPT_ID = "temi-global-socket-io-client-v3";
+  var sharedSocket = null;
+  var rawIo = null;
+  var connecting = false;
+  var waiters = [];
+  var allowReconnect = true;
+  var manualClosing = false;
+  var lastPhotoTokenHandled = sessionStorage.getItem("temi:lastPhotoTokenHandled") || "";
+
+  function socketBase() {
+    return window.location.protocol + "//" + window.location.hostname + ":3000";
+  }
+
+  function isVisible() {
+    return document.visibilityState !== "hidden";
+  }
+
+  function dispatch(name, detail) {
+    try {
+      window.dispatchEvent(new CustomEvent(name, { detail: detail || {} }));
+    } catch (e) {}
+  }
+
+  function getQueryRoom(options) {
+    try {
+      if (!options) return "";
+      if (typeof options.query === "string") {
+        var params = new URLSearchParams(options.query);
+        return String(params.get("room") || "").toLowerCase();
+      }
+      if (options.query && typeof options.query === "object") {
+        return String(options.query.room || "").toLowerCase();
+      }
+    } catch (e) {}
+    return "";
+  }
+
+  function loadSocketClient(callback) {
+    if (window.io) {
+      if (!rawIo) rawIo = window.io.__temiRawIo || window.io;
+      callback();
+      return;
+    }
+
+    var old = document.getElementById(SOCKET_SCRIPT_ID);
+    if (old) {
+      old.addEventListener("load", function () {
+        rawIo = window.io.__temiRawIo || window.io;
+        callback();
+      }, { once: true });
+      return;
+    }
+
+    var script = document.createElement("script");
+    script.id = SOCKET_SCRIPT_ID;
+    script.src = socketBase() + "/socket.io/socket.io.js";
+    script.async = false;
+    script.onload = function () {
+      rawIo = window.io.__temiRawIo || window.io;
+      callback();
+    };
+    script.onerror = function () {
+      console.error("[TemiAppSocket v3] Socket.IO client load failed:", script.src);
+      dispatch("temi-app-socket:error", {
+        message: "Socket.IO client load failed",
+        src: script.src
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  function safeRealDisconnect() {
+    if (!sharedSocket) return;
+
+    manualClosing = true;
+    allowReconnect = false;
+
+    try {
+      if (sharedSocket.__temiRealDisconnect) {
+        sharedSocket.__temiRealDisconnect();
+      } else if (sharedSocket.disconnect) {
+        sharedSocket.disconnect();
+      }
+    } catch (e) {
+      console.warn("[TemiAppSocket v3] real disconnect failed", e);
+    }
+  }
+
+  function protectDisconnect(socket) {
+    if (!socket || socket.__temiDisconnectProtectedV3) return socket;
+
+    socket.__temiDisconnectProtectedV3 = true;
+    socket.__temiRealDisconnect = socket.disconnect ? socket.disconnect.bind(socket) : null;
+    socket.__temiRealClose = socket.close ? socket.close.bind(socket) : null;
+
+    // React 컴포넌트 unmount가 호출하는 disconnect는 SPA 내부 이동 중에는 무시한다.
+    // 단, pagehide/beforeunload/hidden에서는 아래 visibility handler가 실제 disconnect 한다.
+    socket.disconnect = function () {
+      if (!allowReconnect || manualClosing || !isVisible()) {
+        if (socket.__temiRealDisconnect) return socket.__temiRealDisconnect();
+        return socket;
+      }
+
+      console.log("[TemiAppSocket v3] ignored component-level disconnect; shared app socket kept.");
+      return socket;
+    };
+
+    socket.close = socket.disconnect;
+    return socket;
+  }
+
+  function handlePhotoResult(payload) {
+    if (!payload) return;
+
+    var token = payload.token || "";
+    var targetUrl = payload.viewUrl || (token ? "/mobile/app/photo/receive?token=" + encodeURIComponent(token) : "");
+
+    if (!targetUrl) return;
+
+    try {
+      var target = new URL(targetUrl, window.location.origin);
+      var targetToken = target.searchParams.get("token") || token;
+      var currentToken = new URLSearchParams(window.location.search).get("token") || "";
+
+      // 이미 같은 token 처리했으면 반복 이동 금지
+      if (targetToken && lastPhotoTokenHandled === targetToken) {
+        console.log("[TemiAppSocket v3] duplicate photo_result ignored:", targetToken);
+        return;
+      }
+
+      // 이미 같은 결과 페이지에 있으면 반복 이동 금지
+      if (
+        window.location.pathname.indexOf("/mobile/app/photo/receive") === 0 &&
+        currentToken &&
+        targetToken &&
+        currentToken === targetToken
+      ) {
+        lastPhotoTokenHandled = targetToken;
+        sessionStorage.setItem("temi:lastPhotoTokenHandled", targetToken);
+        console.log("[TemiAppSocket v3] already on same photo result:", targetToken);
+        return;
+      }
+
+      if (targetToken) {
+        lastPhotoTokenHandled = targetToken;
+        sessionStorage.setItem("temi:lastPhotoTokenHandled", targetToken);
+      }
+
+      // 이동 직전 재연결 금지. 새 페이지에서 필요하면 새로 1회 연결.
+      allowReconnect = false;
+      if (sharedSocket && sharedSocket.__temiRealDisconnect) {
+        try { sharedSocket.__temiRealDisconnect(); } catch (e) {}
+      }
+
+      window.location.replace(target.href);
+    } catch (e) {
+      allowReconnect = false;
+      window.location.replace(targetUrl);
+    }
+  }
+
+  function bindGlobalEvents(socket) {
+    if (!socket || socket.__temiGlobalEventsBoundV3) return;
+    socket.__temiGlobalEventsBoundV3 = true;
+
+    socket.on("connect", function () {
+      console.log("[TemiAppSocket v3] connected", socket.id);
+      dispatch("temi-app-socket:connect", { id: socket.id });
+    });
+
+    socket.on("disconnect", function (reason) {
+      console.log("[TemiAppSocket v3] disconnected", reason);
+      dispatch("temi-app-socket:disconnect", { reason: reason });
+
+      // Socket.IO 자체 자동 재연결은 꺼둔다.
+      // 필요하면 visible 상태에서만 수동으로 1회 다시 연결한다.
+      if (allowReconnect && isVisible()) {
+        setTimeout(function () {
+          if (allowReconnect && isVisible() && sharedSocket && !sharedSocket.connected) {
+            try {
+              console.log("[TemiAppSocket v3] visible manual reconnect");
+              sharedSocket.connect();
+            } catch (e) {}
+          }
+        }, 1200);
+      }
+    });
+
+    socket.on("connect_error", function (err) {
+      console.error("[TemiAppSocket v3] connect_error", err);
+      dispatch("temi-app-socket:error", {
+        message: err && err.message ? err.message : String(err || "")
+      });
+    });
+
+    [
+      "app:temi_status",
+      "app:temi_connected",
+      "app:temi_position",
+      "app:command_sent",
+      "app:stamp_status",
+      "app:stamp_update"
+    ].forEach(function (eventName) {
+      socket.on(eventName, function (payload) {
+        dispatch(eventName, payload || {});
+      });
+    });
+
+    socket.on("app:photo_result", function (payload) {
+      dispatch("app:photo_result", payload || {});
+      handlePhotoResult(payload);
+    });
+  }
+
+  function createSocket(callback) {
+    if (sharedSocket) {
+      callback(sharedSocket);
+      return;
+    }
+
+    if (!rawIo && window.io) {
+      rawIo = window.io.__temiRawIo || window.io;
+    }
+
+    if (!rawIo) {
+      loadSocketClient(function () {
+        createSocket(callback);
+      });
+      return;
+    }
+
+    allowReconnect = isVisible();
+    manualClosing = false;
+
+    sharedSocket = rawIo(socketBase(), {
+      query: { room: "app" },
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      reconnection: false,
+      timeout: 8000,
+      forceNew: false,
+      multiplex: true
+    });
+
+    protectDisconnect(sharedSocket);
+    bindGlobalEvents(sharedSocket);
+    callback(sharedSocket);
+  }
+
+  function getSocket(callback) {
+    if (sharedSocket) {
+      if (callback) callback(sharedSocket);
+      return Promise.resolve(sharedSocket);
+    }
+
+    if (callback) waiters.push(callback);
+
+    if (connecting) {
+      return new Promise(function (resolve) {
+        waiters.push(resolve);
+      });
+    }
+
+    connecting = true;
+
+    return new Promise(function (resolve) {
+      createSocket(function (socket) {
+        connecting = false;
+
+        var list = waiters.splice(0);
+        list.forEach(function (fn) {
+          try { fn(socket); } catch (e) { console.error(e); }
+        });
+
+        resolve(socket);
+      });
+    });
+  }
+
+  function patchIoFactory() {
+    if (!window.io) return;
+
+    if (window.io.__temiPatchedV3) return;
+
+    rawIo = window.io.__temiRawIo || window.io;
+
+    var patched = function (url, options) {
+      var room = getQueryRoom(options);
+      var urlText = String(url || "");
+
+      if (room === "app" && (urlText.indexOf(":3000") >= 0 || urlText === socketBase() || urlText === "")) {
+        if (!sharedSocket) {
+          createSocket(function () {});
+        }
+        return sharedSocket;
+      }
+
+      return rawIo.apply(this, arguments);
+    };
+
+    for (var k in rawIo) {
+      try { patched[k] = rawIo[k]; } catch (e) {}
+    }
+
+    patched.__temiPatchedV3 = true;
+    patched.__temiRawIo = rawIo;
+    window.io = patched;
+  }
+
+  window.TemiAppSocket = {
+    __version: "v3",
+    getSocket: getSocket,
+    get: getSocket,
+    emit: function (eventName, payload, ack) {
+      return getSocket().then(function (socket) {
+        if (!socket.connected && isVisible()) {
+          try { socket.connect(); } catch (e) {}
+        }
+        socket.emit(eventName, payload || {}, ack);
+        return socket;
+      });
+    },
+    on: function (eventName, handler) {
+      return getSocket().then(function (socket) {
+        socket.on(eventName, handler);
+        return socket;
+      });
+    },
+    off: function (eventName, handler) {
+      return getSocket().then(function (socket) {
+        socket.off(eventName, handler);
+        return socket;
+      });
+    },
+    disconnectNow: safeRealDisconnect,
+    status: function () {
+      return {
+        version: "v3",
+        exists: !!sharedSocket,
+        connected: !!(sharedSocket && sharedSocket.connected),
+        id: sharedSocket ? sharedSocket.id : null,
+        visible: isVisible(),
+        allowReconnect: allowReconnect,
+        base: socketBase()
+      };
+    }
+  };
+
+  window.addEventListener("pagehide", function () {
+    console.log("[TemiAppSocket v3] pagehide -> real disconnect");
+    safeRealDisconnect();
+  });
+
+  window.addEventListener("beforeunload", function () {
+    console.log("[TemiAppSocket v3] beforeunload -> real disconnect");
+    safeRealDisconnect();
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") {
+      console.log("[TemiAppSocket v3] hidden -> real disconnect");
+      safeRealDisconnect();
+      return;
+    }
+
+    allowReconnect = true;
+    manualClosing = false;
+
+    if (sharedSocket) {
+      try {
+        if (!sharedSocket.connected) sharedSocket.connect();
+      } catch (e) {}
+    } else {
+      getSocket();
+    }
+  });
+
+  loadSocketClient(function () {
+    patchIoFactory();
+    if (isVisible()) getSocket();
+  });
+})();
+</script>
+
+
+
+<script>
+/*
+  PocketMap Socket Replay Bridge v4
+  문제:
+  - 전역 app socket이 이미 connect된 뒤 포켓맵 React 컴포넌트가 socket.on("connect")를 등록하면
+    connect 이벤트를 놓쳐서 "socket 준비중 / Temi offline" 상태에 머무를 수 있음.
+  해결:
+  - shared socket의 on()을 감싸서 connect/status/position 최신값을 즉시 replay.
+  - 서버 /health를 1회 조회해서 Temi connected 상태도 즉시 보정.
+*/
+(function () {
+  if (window.__temiPocketMapReplayBridgeV4) return;
+  window.__temiPocketMapReplayBridgeV4 = true;
+
+  var latest = {};
+  var replayEvents = [
+    "app:temi_status",
+    "app:temi_connected",
+    "app:temi_position",
+    "app:command_sent",
+    "app:photo_result",
+    "app:stamp_status",
+    "app:stamp_update"
+  ];
+
+  function socketBase() {
+    return window.location.protocol + "//" + window.location.hostname + ":3000";
+  }
+
+  function remember(name, payload) {
+    latest[name] = payload || {};
+  }
+
+  replayEvents.forEach(function (name) {
+    window.addEventListener(name, function (event) {
+      remember(name, event.detail || {});
+    });
+  });
+
+  function replay(socket, name, handler) {
+    if (typeof handler !== "function") return;
+
+    if (name === "connect" && socket && socket.connected) {
+      setTimeout(function () {
+        try { handler.call(socket); } catch (e) { console.error(e); }
+      }, 0);
+      return;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(latest, name)) {
+      setTimeout(function () {
+        try { handler.call(socket, latest[name]); } catch (e) { console.error(e); }
+      }, 0);
+    }
+  }
+
+  function patchSocket(socket) {
+    if (!socket || socket.__temiReplayBridgePatchedV4) return socket;
+
+    socket.__temiReplayBridgePatchedV4 = true;
+
+    var realOn = socket.on ? socket.on.bind(socket) : null;
+    if (!realOn) return socket;
+
+    socket.on = function (name, handler) {
+      var out = realOn(name, handler);
+      replay(socket, name, handler);
+      return out;
+    };
+
+    return socket;
+  }
+
+  function getSharedSocket(callback) {
+    if (window.TemiAppSocket && window.TemiAppSocket.getSocket) {
+      window.TemiAppSocket.getSocket().then(function (socket) {
+        callback(patchSocket(socket));
+      });
+      return;
+    }
+
+    setTimeout(function () {
+      getSharedSocket(callback);
+    }, 300);
+  }
+
+  function patchIoReturnValue() {
+    if (!window.io || window.io.__temiReplayIoPatchedV4) return;
+
+    var currentIo = window.io;
+    var rawIo = currentIo.__temiRawIo || currentIo;
+
+    var patched = function () {
+      var socket = currentIo.apply(this, arguments);
+      return patchSocket(socket);
+    };
+
+    for (var k in currentIo) {
+      try { patched[k] = currentIo[k]; } catch (e) {}
+    }
+
+    patched.__temiReplayIoPatchedV4 = true;
+    patched.__temiRawIo = rawIo;
+    window.io = patched;
+  }
+
+  function fetchHealthOnce() {
+    fetch(socketBase() + "/health", { cache: "no-store" })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data || !data.temi) return;
+
+        remember("app:temi_status", data.temi);
+        remember("app:temi_connected", { connected: !!data.temi.connected });
+        remember("app:temi_position", data.temi);
+
+        window.dispatchEvent(new CustomEvent("app:temi_status", { detail: data.temi }));
+        window.dispatchEvent(new CustomEvent("app:temi_connected", { detail: { connected: !!data.temi.connected } }));
+        window.dispatchEvent(new CustomEvent("app:temi_position", { detail: data.temi }));
+      })
+      .catch(function (err) {
+        console.warn("[PocketMap Replay Bridge] health fetch failed", err);
+      });
+  }
+
+  function start() {
+    getSharedSocket(function (socket) {
+      patchSocket(socket);
+
+      // 이미 연결되어 있으면 connect를 놓친 컴포넌트용으로 window 이벤트도 발행
+      if (socket.connected) {
+        window.dispatchEvent(new CustomEvent("temi-app-socket:connect", { detail: { id: socket.id } }));
+      }
+    });
+
+    patchIoReturnValue();
+    fetchHealthOnce();
+
+    // 포켓맵 진입 타이밍이 늦을 수 있어서 짧게 몇 번 보정
+    setTimeout(fetchHealthOnce, 700);
+    setTimeout(fetchHealthOnce, 1800);
+    setTimeout(fetchHealthOnce, 3500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
+</script>
+
+
+<script>
+/*
+  Stamp Rally Socket Bridge v1
+  - React 번들을 직접 크게 뜯지 않고 /api/stamps/claim 성공 시점만 감지한다.
+  - 성공한 스탬프 적립 결과를 전역 Socket으로 app:stamp_update 전송한다.
+  - 서버가 broadcast한 app:stamp_status는 localStorage에 저장하고 window event로 재전달한다.
+*/
+(function () {
+  if (window.__temiStampRallySocketBridgeV1) return;
+  window.__temiStampRallySocketBridgeV1 = true;
+
+  var STORAGE_KEY = "temi:stampStatus";
+  var LAST_CLAIM_KEY = "temi:lastStampClaim";
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function getSocketEmit() {
+    if (window.TemiAppSocket && window.TemiAppSocket.emit) {
+      return window.TemiAppSocket.emit.bind(window.TemiAppSocket);
+    }
+    return null;
+  }
+
+  function saveStatus(status) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(status || {}));
+    } catch (e) {}
+  }
+
+  function normalizeQrValue(value) {
+    value = String(value || "").trim();
+    if (!value) return "";
+
+    try {
+      var parsed = new URL(value.indexOf("://") >= 0 ? value : window.location.origin + value);
+      var claim = parsed.searchParams.get("claim");
+      if (claim && claim.trim()) return claim.trim();
+    } catch (e) {}
+
+    return value;
+  }
+
+  function tryParseJson(text) {
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function requestBodyToQrValue(init) {
+    try {
+      if (!init || !init.body) return "";
+
+      if (typeof init.body === "string") {
+        var parsed = tryParseJson(init.body);
+        return normalizeQrValue((parsed && (parsed.qrValue || parsed.claim || parsed.code || parsed.spotCode)) || "");
+      }
+
+      if (init.body instanceof FormData) {
+        return normalizeQrValue(
+          init.body.get("qrValue") ||
+          init.body.get("claim") ||
+          init.body.get("code") ||
+          init.body.get("spotCode") ||
+          ""
+        );
+      }
+    } catch (e) {}
+
+    return "";
+  }
+
+  function emitStampUpdate(payload) {
+    var emit = getSocketEmit();
+    var stampPayload = {
+      type: "stamp_update",
+      source: "mobile-rally",
+      path: window.location.pathname,
+      search: window.location.search,
+      href: window.location.href,
+      updatedAt: nowIso(),
+      qrValue: normalizeQrValue(payload && payload.qrValue),
+      result: payload && payload.result ? payload.result : null
+    };
+
+    try {
+      localStorage.setItem(LAST_CLAIM_KEY, JSON.stringify(stampPayload));
+    } catch (e) {}
+
+    window.dispatchEvent(new CustomEvent("app:stamp_update", { detail: stampPayload }));
+
+    if (emit) {
+      emit("app:stamp_update", stampPayload, function (ack) {
+        console.log("[Stamp Rally] app:stamp_update ack", ack);
+      });
+    } else {
+      console.warn("[Stamp Rally] TemiAppSocket not ready; local event only", stampPayload);
+    }
+  }
+
+  // 서버에서 받은 스탬프 상태를 저장
+  window.addEventListener("app:stamp_status", function (event) {
+    saveStatus(event.detail || {});
+  });
+
+  window.addEventListener("app:stamp_update", function (event) {
+    var detail = event.detail || {};
+    if (detail && detail.status) saveStatus(detail.status);
+  });
+
+  // /api/stamps/claim 성공 응답을 감지해서 Socket에 알림
+  if (window.fetch && !window.fetch.__temiStampPatched) {
+    var realFetch = window.fetch.bind(window);
+
+    var patchedFetch = function (input, init) {
+      var url = "";
+      try {
+        url = typeof input === "string" ? input : input && input.url ? input.url : "";
+      } catch (e) {}
+
+      var method = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
+      var isClaimApi = url.indexOf("/api/stamps/claim") >= 0;
+
+      return realFetch(input, init).then(function (response) {
+        if (isClaimApi && method === "POST" && response && response.ok) {
+          var qrValue = requestBodyToQrValue(init);
+
+          try {
+            response.clone().text().then(function (text) {
+              var result = tryParseJson(text) || { raw: text };
+              emitStampUpdate({ qrValue: qrValue, result: result });
+            }).catch(function () {
+              emitStampUpdate({ qrValue: qrValue, result: null });
+            });
+          } catch (e) {
+            emitStampUpdate({ qrValue: qrValue, result: null });
+          }
+        }
+
+        return response;
+      });
+    };
+
+    patchedFetch.__temiStampPatched = true;
+    window.fetch = patchedFetch;
+  }
+
+  // /rally?claim=... 로 직접 들어온 경우, 화면 로딩 직후 Socket 준비를 먼저 시도한다.
+  try {
+    var directClaim = new URLSearchParams(window.location.search).get("claim");
+    if (directClaim && window.TemiAppSocket && window.TemiAppSocket.getSocket) {
+      window.TemiAppSocket.getSocket().then(function () {
+        console.log("[Stamp Rally] socket ready before claim", directClaim);
+      });
+    }
+  } catch (e) {}
+})();
+</script>
+
+<script>
+/*
+  Stamp Rally Direct Claim Bridge v2
+  QR로 /mobile/app/rally?claim=RALLY-1 에 들어오면
+  React 내부 API 성공 여부와 상관없이 즉시 전역 Socket으로 app:stamp_update를 보낸다.
+  또한 모바일 화면에 스탬프 적립 완료 토스트를 보여준다.
+*/
+(function () {
+  if (window.__temiStampDirectClaimBridgeV2) return;
+  window.__temiStampDirectClaimBridgeV2 = true;
+
+  var CLAIMS_KEY = "temi:stampClaims";
+  var LAST_EMIT_KEY = "temi:lastStampDirectEmit";
+
+  function normalizeStampCode(raw) {
+    var value = String(raw || "").trim();
+    if (!value) return "";
+
+    try {
+      var parsed = new URL(value.indexOf("://") >= 0 ? value : window.location.origin + value);
+      var claim = parsed.searchParams.get("claim");
+      if (claim && claim.trim()) value = claim.trim();
+    } catch (e) {}
+
+    var compact = value.replace(/\s+/g, "").toUpperCase();
+
+    if (compact === "1" || compact === "A" || compact === "ZONE_A" || compact === "RALLY1") return "RALLY-1";
+    if (compact === "2" || compact === "B" || compact === "ZONE_B" || compact === "RALLY2") return "RALLY-2";
+    if (compact === "3" || compact === "C" || compact === "ZONE_C" || compact === "RALLY3") return "RALLY-3";
+    if (compact === "4" || compact === "D" || compact === "ZONE_D" || compact === "RALLY4") return "RALLY-4";
+
+    if (/^RALLY-\d+$/i.test(compact)) return compact;
+    return compact;
+  }
+
+  function getClaimFromUrl() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      return normalizeStampCode(params.get("claim") || "");
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function readClaims() {
+    try {
+      var raw = localStorage.getItem(CLAIMS_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function writeClaims(list) {
+    try {
+      localStorage.setItem(CLAIMS_KEY, JSON.stringify(list || []));
+    } catch (e) {}
+  }
+
+  function saveLocalClaim(code) {
+    var list = readClaims();
+    var exists = list.some(function (item) { return item.code === code; });
+    var item = {
+      code: code,
+      qrValue: code,
+      claimedAt: new Date().toISOString()
+    };
+
+    if (exists) {
+      list = list.map(function (x) { return x.code === code ? Object.assign({}, x, item) : x; });
+    } else {
+      list.push(item);
+    }
+
+    writeClaims(list);
+
+    try {
+      localStorage.setItem("temi:stampStatus", JSON.stringify({
+        claims: list,
+        collectedCount: list.length,
+        total: 4,
+        completed: list.length >= 4,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch (e) {}
+
+    return list;
+  }
+
+  function showToast(code, list) {
+    var old = document.getElementById("temi-stamp-direct-toast");
+    if (old) old.remove();
+
+    var box = document.createElement("div");
+    box.id = "temi-stamp-direct-toast";
+    box.style.position = "fixed";
+    box.style.left = "50%";
+    box.style.top = "18px";
+    box.style.transform = "translateX(-50%)";
+    box.style.zIndex = "999999";
+    box.style.width = "calc(100% - 32px)";
+    box.style.maxWidth = "420px";
+    box.style.border = "4px solid #111827";
+    box.style.borderRadius = "22px";
+    box.style.background = "#fff3a3";
+    box.style.boxShadow = "0 8px 0 rgba(0,0,0,.9)";
+    box.style.padding = "16px 18px";
+    box.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+    box.style.color = "#111827";
+    box.style.textAlign = "center";
+    box.innerHTML =
+      '<div style="font-weight:900;font-size:20px;">스탬프 적립 완료!</div>' +
+      '<div style="font-weight:800;font-size:15px;margin-top:4px;">' + code + '</div>' +
+      '<div style="font-weight:700;font-size:13px;margin-top:6px;">현재 ' + list.length + ' / 4 획득</div>';
+
+    document.body.appendChild(box);
+
+    setTimeout(function () {
+      if (box && box.parentNode) box.parentNode.removeChild(box);
+    }, 4200);
+  }
+
+  function emitStamp(code, list) {
+    var payload = {
+      type: "stamp_update",
+      source: "mobile-rally-direct-claim",
+      code: code,
+      qrValue: code,
+      result: {
+        code: code,
+        localClaims: list,
+        collectedCount: list.length,
+        total: 4,
+        completed: list.length >= 4
+      },
+      href: window.location.href,
+      path: window.location.pathname,
+      search: window.location.search,
+      updatedAt: new Date().toISOString()
+    };
+
+    window.dispatchEvent(new CustomEvent("app:stamp_update", { detail: payload }));
+
+    try {
+      localStorage.setItem(LAST_EMIT_KEY, JSON.stringify(payload));
+    } catch (e) {}
+
+    function send() {
+      if (window.TemiAppSocket && window.TemiAppSocket.emit) {
+        window.TemiAppSocket.emit("app:stamp_update", payload, function (ack) {
+          console.log("[Stamp Direct] app:stamp_update ack", ack);
+        });
+        return true;
+      }
+      return false;
+    }
+
+    if (send()) return;
+
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries += 1;
+      if (send() || tries >= 20) clearInterval(timer);
+    }, 300);
+  }
+
+  function run() {
+    var code = getClaimFromUrl();
+    if (!code) return;
+
+    var list = saveLocalClaim(code);
+    showToast(code, list);
+    emitStamp(code, list);
+
+    // React가 claim 처리 후 /rally로 replace해도, 위에서 이미 Socket 전송됨.
+    console.log("[Stamp Direct] claimed", code, list);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
+
+
+
+<script>
+/*
+  Stamp Badge 4th Fix v5
+  - 기존 번들에 박혀 있던 4번째 잠김 카드가 남는 경우를 대비해,
+    RALLY-4까지 획득했으면 남은 잠김 카드를 숨긴다.
+*/
+(function () {
+  if (window.__temiStampBadge4FixV5) return;
+  window.__temiStampBadge4FixV5 = true;
+
+  function readClaims() {
+    try {
+      var raw = localStorage.getItem("temi:stampClaims");
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function hasFour() {
+    var set = {};
+    readClaims().forEach(function (x) {
+      var c = String((x && (x.code || x.spotCode || x.qrValue)) || "").toUpperCase().replace(/\s+/g, "");
+      if (c === "RALLY1") c = "RALLY-1";
+      if (c === "RALLY2") c = "RALLY-2";
+      if (c === "RALLY3") c = "RALLY-3";
+      if (c === "RALLY4") c = "RALLY-4";
+      if (/^RALLY-\d$/.test(c)) set[c] = true;
+    });
+    return set["RALLY-1"] && set["RALLY-2"] && set["RALLY-3"] && set["RALLY-4"];
+  }
+
+  function hideLockWhenComplete() {
+    if (!hasFour()) return;
+
+    var nodes = Array.prototype.slice.call(document.querySelectorAll("*")).filter(function (el) {
+      return (el.textContent || "").trim() === "잠김";
+    });
+
+    nodes.forEach(function (textNode) {
+      var card = textNode.closest ? textNode.closest(".stamp-card, div") : null;
+      if (card) card.style.display = "none";
+    });
+  }
+
+  window.addEventListener("app:stamp_update", function () {
+    setTimeout(hideLockWhenComplete, 200);
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(hideLockWhenComplete, 300);
+      setTimeout(hideLockWhenComplete, 1200);
+    });
+  } else {
+    setTimeout(hideLockWhenComplete, 300);
+    setTimeout(hideLockWhenComplete, 1200);
+  }
+})();
+</script>
+
+
+<script>
+/*
+  Stamp Rally Map Marker Overlay v6
+  - 스탬프 랠리 페이지 지도 위에 RALLY-1~4 방문 여부 마커를 표시한다.
+  - 흰화면 방지를 위해 MutationObserver/DOM 전체 탐색 없이, 지도 이미지 1개만 찾아 가볍게 처리한다.
+*/
+(function () {
+  if (window.__temiStampMapMarkerOverlayV6) return;
+  window.__temiStampMapMarkerOverlayV6 = true;
+
+  var CLAIMS_KEY = "temi:stampClaims";
+  var STATUS_KEY = "temi:stampStatus";
+  var LAYER_ID = "temi-stamp-map-marker-layer-v6";
+
+  // 위치는 현재 랠리 지도 이미지 기준 퍼센트. 필요하면 여기 숫자만 조정하면 됨.
+  var MARKERS = [
+    { code: "RALLY-1", label: "A", name: "A 구역", left: 30, top: 62 },
+    { code: "RALLY-2", label: "B", name: "B 구역", left: 62, top: 60 },
+    { code: "RALLY-3", label: "C", name: "C 구역", left: 38, top: 36 },
+    { code: "RALLY-4", label: "D", name: "D 구역", left: 73, top: 33 }
+  ];
+
+  function normalizeCode(raw) {
+    var value = String(raw || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!value) return "";
+
+    if (value === "1" || value === "A" || value === "ZONE_A" || value === "RALLY1" || value === "STAMP1") return "RALLY-1";
+    if (value === "2" || value === "B" || value === "ZONE_B" || value === "RALLY2" || value === "STAMP2") return "RALLY-2";
+    if (value === "3" || value === "C" || value === "ZONE_C" || value === "RALLY3" || value === "STAMP3") return "RALLY-3";
+    if (value === "4" || value === "D" || value === "ZONE_D" || value === "RALLY4" || value === "STAMP4") return "RALLY-4";
+    return value;
+  }
+
+  function getClaimedSet() {
+    var set = {};
+
+    function add(item) {
+      if (!item) return;
+      var code = normalizeCode(item.code || item.spotCode || item.qrValue || item.claim || item.stampCode);
+      if (/^RALLY-\d$/.test(code)) set[code] = true;
+    }
+
+    try {
+      var raw = localStorage.getItem(CLAIMS_KEY);
+      var claims = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(claims)) claims.forEach(add);
+    } catch (e) {}
+
+    try {
+      var rawStatus = localStorage.getItem(STATUS_KEY);
+      var status = rawStatus ? JSON.parse(rawStatus) : null;
+      if (status && Array.isArray(status.claims)) status.claims.forEach(add);
+      if (status && status.last) add(status.last);
+    } catch (e) {}
+
+    return set;
+  }
+
+  function findRallyMapImage() {
+    // 가장 안전한 1순위: alt 명칭
+    var img =
+      document.querySelector("img[alt='스탬프 랠리 지도']") ||
+      document.querySelector("img[alt*='랠리'][alt*='지도']");
+
+    if (img) return img;
+
+    // 보조: 랠리 페이지에서 큰 지도 이미지로 보이는 것만 선택
+    var imgs = Array.prototype.slice.call(document.querySelectorAll("img"));
+    return imgs.find(function (node) {
+      var r = node.getBoundingClientRect();
+      var src = String(node.getAttribute("src") || "").toLowerCase();
+      return r.width > 260 && r.height > 160 && (src.indexOf("map") >= 0 || src.indexOf("rally") >= 0 || src.indexOf("world") >= 0);
+    }) || null;
+  }
+
+  function ensureLayer(container) {
+    var layer = container.querySelector("#" + LAYER_ID);
+    if (layer) return layer;
+
+    layer = document.createElement("div");
+    layer.id = LAYER_ID;
+    layer.style.position = "absolute";
+    layer.style.inset = "0";
+    layer.style.pointerEvents = "none";
+    layer.style.zIndex = "40";
+    container.appendChild(layer);
+    return layer;
+  }
+
+  function markerHtml(marker, done) {
+    var bg = done ? "#16a34a" : "rgba(17, 24, 39, .88)";
+    var border = done ? "#ffffff" : "#ffffff";
+    var shadow = done ? "0 5px 0 rgba(20, 83, 45, .65)" : "0 5px 0 rgba(0, 0, 0, .42)";
+    var text = done ? "✓ " + marker.label : marker.label;
+    var sub = done ? "방문 완료" : "미방문";
+
+    return (
+      '<div style="' +
+        'min-width:54px;height:34px;border-radius:999px;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'background:' + bg + ';border:4px solid ' + border + ';' +
+        'box-shadow:' + shadow + ';color:#fff;font-weight:900;font-size:15px;' +
+      '">' + text + '</div>' +
+      '<div style="' +
+        'margin-top:4px;padding:2px 6px;border-radius:999px;' +
+        'background:rgba(255,255,255,.92);color:#111827;' +
+        'font-weight:900;font-size:10px;white-space:nowrap;' +
+      '">' + marker.name + ' · ' + sub + '</div>'
+    );
+  }
+
+  function renderMarkers() {
+    if (location.pathname.indexOf("/mobile/app") < 0) return;
+
+    var img = findRallyMapImage();
+    if (!img) return;
+
+    var container = img.parentElement;
+    if (!container) return;
+
+    if (getComputedStyle(container).position === "static") {
+      container.style.position = "relative";
+    }
+
+    container.style.overflow = "hidden";
+
+    var layer = ensureLayer(container);
+    var claimed = getClaimedSet();
+
+    layer.innerHTML = "";
+
+    MARKERS.forEach(function (m) {
+      var done = !!claimed[m.code];
+      var el = document.createElement("div");
+
+      el.setAttribute("data-stamp-marker", m.code);
+      el.style.position = "absolute";
+      el.style.left = m.left + "%";
+      el.style.top = m.top + "%";
+      el.style.transform = "translate(-50%, -50%)";
+      el.style.display = "flex";
+      el.style.flexDirection = "column";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "center";
+      el.style.opacity = done ? "1" : ".82";
+      el.style.filter = done ? "none" : "grayscale(.25)";
+
+      el.innerHTML = markerHtml(m, done);
+      layer.appendChild(el);
+    });
+  }
+
+  function scheduleRender() {
+    renderMarkers();
+    setTimeout(renderMarkers, 250);
+    setTimeout(renderMarkers, 800);
+    setTimeout(renderMarkers, 1600);
+  }
+
+  window.addEventListener("app:stamp_update", scheduleRender);
+  window.addEventListener("app:stamp_status", scheduleRender);
+  window.addEventListener("popstate", scheduleRender);
+  window.addEventListener("hashchange", scheduleRender);
+  window.addEventListener("pageshow", scheduleRender);
+
+  // 하단 탭 이동 후 React 렌더 완료 타이밍 보정
+  document.addEventListener("click", function () {
+    setTimeout(renderMarkers, 400);
+    setTimeout(renderMarkers, 1100);
+  }, true);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", scheduleRender);
+  } else {
+    scheduleRender();
+  }
+})();
+</script>
+
+<script type="module" crossorigin src="/mobile/app/assets/index-temi-camera-onecut-global-socket-stamp-map-v6.js"></script>
     <link rel="stylesheet" crossorigin href="/mobile/app/assets/index-eRzGqgcc.css">
   </head>
   <body>

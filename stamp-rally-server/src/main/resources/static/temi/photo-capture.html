@@ -206,6 +206,11 @@
           filterPicked: false,
           nativeCamera: false,
           busy: false,
+          nativePreviewReady: false,
+          webCameraReady: false,
+          fourCutActive: false,
+          fourCutShots: [],
+          fourCutIndex: 0,
         };
 
         function isEnglish() {
@@ -353,6 +358,7 @@
 
         function startNativeCameraMode() {
           state.nativeCamera = true;
+          state.nativePreviewReady = false;
           video.hidden = true;
           nativePreview.hidden = false;
           showNativeNotice(
@@ -360,10 +366,10 @@
               ? "Preparing Temi native camera<br />Please wait"
               : "Temi 네이티브 카메라 준비 중입니다<br />잠시만 기다려 주세요"
           );
-          shutter.disabled = !state.filterPicked;
+          shutter.disabled = true;
           document.getElementById("shutterHint").textContent = isEnglish()
-            ? "Taking photos with Temi native camera."
-            : "Temi 네이티브 카메라로 촬영합니다.";
+            ? "Please wait until the Temi camera preview is ready."
+            : "Temi 카메라 미리보기가 준비될 때까지 기다려 주세요.";
 
           if (hasNativePreviewBridge()) {
             window.TemiBridge.startCameraPreview();
@@ -371,6 +377,8 @@
         }
 
         function startWebCameraMode() {
+          state.webCameraReady = false;
+
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             hideNativeNotice();
             return;
@@ -383,7 +391,13 @@
             })
             .then(function (stream) {
               video.srcObject = stream;
-              shutter.disabled = !state.filterPicked;
+              video.onloadedmetadata = function () {
+                state.webCameraReady = true;
+                shutter.disabled = !state.filterPicked;
+                document.getElementById("shutterHint").textContent = isEnglish()
+                  ? "Camera is ready. Press the button to take 4 photos."
+                  : "카메라 준비 완료. 버튼을 누르면 4컷 촬영을 시작합니다.";
+              };
             })
             .catch(function () {
               alert(
@@ -491,6 +505,7 @@
               uploadStatus.textContent = isEnglish()
                 ? "Scan the QR code to download your photo."
                 : "QR을 스캔해 폰으로 사진을 받으세요.";
+              notifyMobilePhotoResult(token);
             })
             .catch(function (e) {
               uploadStatus.textContent = isEnglish()
@@ -500,48 +515,127 @@
             })
             .finally(function () {
               state.busy = false;
+              state.fourCutActive = false;
               shutter.disabled = false;
+              document.getElementById("shutterHint").textContent = isEnglish()
+                ? "Camera is ready. Press the button to take 4 photos."
+                : "카메라 준비 완료. 버튼을 누르면 4컷 촬영을 시작합니다.";
             });
         }
 
-        function snapWithWebCamera() {
-          if (!video.videoWidth) {
-            alert(isEnglish() ? "Please wait until the camera is ready." : "카메라가 준비될 때까지 잠시만 기다려 주세요.");
-            state.busy = false;
-            shutter.disabled = false;
+        function notifyMobilePhotoResult(token) {
+          if (!token) return;
+
+          var socketUrl = window.location.protocol + "//" + window.location.hostname + ":3000";
+          var viewUrl =
+            window.location.origin +
+            "/mobile/app/photo/receive?token=" +
+            encodeURIComponent(token);
+
+          function emitResult() {
+            try {
+              var s = window.io(socketUrl, {
+                query: { room: "photo" },
+                transports: ["websocket", "polling"],
+              });
+
+              s.on("connect", function () {
+                s.emit("temi:photo_result", {
+                  token: token,
+                  viewUrl: viewUrl,
+                  source: "temi-photo-capture",
+                  createdAt: new Date().toISOString(),
+                });
+
+                setTimeout(function () {
+                  s.disconnect();
+                }, 700);
+              });
+            } catch (e) {
+              console.warn("photo_result emit failed", e);
+            }
+          }
+
+          if (window.io) {
+            emitResult();
             return;
           }
 
-          if (!drawVideoFrame()) {
-            alert(isEnglish() ? "Failed to capture camera frame." : "카메라 프레임을 가져오지 못했습니다.");
-            state.busy = false;
-            shutter.disabled = false;
-            return;
-          }
-
-          work.toBlob(
-            function (blob) {
-              processCapturedBlob(blob);
-            },
-            "image/png",
-            0.92
-          );
+          var script = document.createElement("script");
+          script.src = socketUrl + "/socket.io/socket.io.js";
+          script.onload = emitResult;
+          script.onerror = function () {
+            console.warn("Socket.IO client load failed");
+          };
+          document.head.appendChild(script);
         }
 
-        function snapWithNativeCamera() {
-          if (!hasNativeCameraBridge()) {
-            alert(isEnglish() ? "Temi native camera bridge was not found." : "Temi 네이티브 카메라 연결을 찾지 못했습니다.");
-            state.busy = false;
-            shutter.disabled = false;
-            return;
-          }
+        function captureWebFrameBlob() {
+          return new Promise(function (resolve, reject) {
+            if (!video.videoWidth) {
+              reject(new Error(isEnglish() ? "Please wait until the camera is ready." : "카메라가 준비될 때까지 잠시만 기다려 주세요."));
+              return;
+            }
 
-          uploadStatus.hidden = false;
-          uploadStatus.textContent = isEnglish() ? "Taking photo with Temi camera..." : "Temi 카메라 촬영 중…";
-          window.TemiBridge.takePhoto();
+            if (!drawVideoFrame()) {
+              reject(new Error(isEnglish() ? "Failed to capture camera frame." : "카메라 프레임을 가져오지 못했습니다."));
+              return;
+            }
+
+            work.toBlob(
+              function (blob) {
+                if (!blob) {
+                  reject(new Error(isEnglish() ? "Image conversion failed." : "이미지 변환 실패"));
+                  return;
+                }
+                resolve(blob);
+              },
+              "image/png",
+              0.92
+            );
+          });
         }
 
-        function snap() {
+        function takeOneShot() {
+          flash.classList.add("is-on");
+
+          setTimeout(function () {
+            flash.classList.remove("is-on");
+
+            if (state.nativeCamera || hasNativeCameraBridge()) {
+              if (!hasNativeCameraBridge()) {
+                handleFourCutError(new Error(isEnglish() ? "Temi native camera bridge was not found." : "Temi 네이티브 카메라 연결을 찾지 못했습니다."));
+                return;
+              }
+
+              if (!state.nativePreviewReady) {
+                handleFourCutError(new Error(isEnglish() ? "Please wait until the Temi camera preview is ready." : "Temi 카메라 준비가 끝날 때까지 기다려 주세요."));
+                return;
+              }
+
+              uploadStatus.hidden = false;
+              uploadStatus.textContent = isEnglish()
+                ? "Taking photo " + state.fourCutIndex + " of 4..."
+                : state.fourCutIndex + "/4 컷 촬영 중…";
+
+              window.TemiBridge.takePhoto();
+              return;
+            }
+
+            if (!state.webCameraReady) {
+              handleFourCutError(new Error(isEnglish() ? "Please wait until the camera is ready." : "카메라 준비가 끝날 때까지 기다려 주세요."));
+              return;
+            }
+
+            captureWebFrameBlob()
+              .then(function (blob) {
+                handleFourCutShot(blob);
+              })
+              .catch(handleFourCutError);
+          }, 120);
+        }
+
+        function startFourCutCapture() {
           if (!state.filterPicked) {
             alert(isEnglish() ? "Please select a frame first." : "먼저 프레임을 선택해 주세요.");
             return;
@@ -551,20 +645,207 @@
             return;
           }
 
+          if ((state.nativeCamera || hasNativeCameraBridge()) && !state.nativePreviewReady) {
+            alert(isEnglish() ? "Please wait until the Temi camera preview is ready." : "Temi 카메라 준비가 끝날 때까지 기다려 주세요.");
+            return;
+          }
+
+          if (!(state.nativeCamera || hasNativeCameraBridge()) && !state.webCameraReady) {
+            alert(isEnglish() ? "Please wait until the camera is ready." : "카메라 준비가 끝날 때까지 기다려 주세요.");
+            return;
+          }
+
           state.busy = true;
+          state.fourCutActive = true;
+          state.fourCutShots = [];
+          state.fourCutIndex = 1;
           shutter.disabled = true;
+          closeResult();
 
-          flash.classList.add("is-on");
+          uploadStatus.hidden = false;
+          uploadStatus.textContent = isEnglish()
+            ? "Starting 4-cut photo..."
+            : "4컷 촬영을 시작합니다…";
 
-          setTimeout(function () {
-            flash.classList.remove("is-on");
+          document.getElementById("shutterHint").textContent = isEnglish()
+            ? "Taking 4 photos. Please wait."
+            : "4컷 촬영 중입니다. 잠시만 기다려 주세요.";
 
-            if (state.nativeCamera || hasNativeCameraBridge()) {
-              snapWithNativeCamera();
-            } else {
-              snapWithWebCamera();
-            }
-          }, 120);
+          takeOneShot();
+        }
+
+        function handleFourCutShot(blob) {
+          if (!state.fourCutActive) {
+            return;
+          }
+
+          state.fourCutShots.push(blob);
+
+          if (state.fourCutShots.length >= 4) {
+            uploadStatus.hidden = false;
+            uploadStatus.textContent = isEnglish()
+              ? "Compositing 4-cut photo..."
+              : "네컷 사진 합성 중…";
+
+            composeFourCutBlob(state.fourCutShots)
+              .then(function (fourCutBlob) {
+                processCapturedBlob(fourCutBlob);
+              })
+              .catch(handleFourCutError);
+
+            return;
+          }
+
+          state.fourCutIndex = state.fourCutShots.length + 1;
+          uploadStatus.hidden = false;
+          uploadStatus.textContent = isEnglish()
+            ? "Next photo in 3 seconds... (" + state.fourCutIndex + "/4)"
+            : "3초 후 다음 컷을 촬영합니다… (" + state.fourCutIndex + "/4)";
+
+          setTimeout(takeOneShot, 3000);
+        }
+
+        function handleFourCutError(error) {
+          state.busy = false;
+          state.fourCutActive = false;
+          state.fourCutShots = [];
+          state.fourCutIndex = 0;
+          shutter.disabled = false;
+
+          var msg = error && error.message ? error.message : (isEnglish() ? "Photo capture failed." : "촬영에 실패했습니다.");
+          uploadStatus.hidden = false;
+          uploadStatus.textContent = msg;
+          alert(msg);
+        }
+
+        function loadImageFromBlob(blob) {
+          return new Promise(function (resolve, reject) {
+            var url = URL.createObjectURL(blob);
+            var img = new Image();
+
+            img.onload = function () {
+              resolve({ img: img, url: url });
+            };
+
+            img.onerror = function () {
+              URL.revokeObjectURL(url);
+              reject(new Error(isEnglish() ? "Failed to load captured photo." : "촬영 이미지를 불러오지 못했습니다."));
+            };
+
+            img.src = url;
+          });
+        }
+
+        function composeFourCutBlob(blobs) {
+          return Promise.all(blobs.map(loadImageFromBlob)).then(function (items) {
+            return new Promise(function (resolve, reject) {
+              var out = document.createElement("canvas");
+
+              // 최종 결과물 사이즈: 세로형 인생네컷
+              var outW = 900;
+              var outH = 1600;
+
+              // 예전 결과물 UI와 비슷한 노란 배경 + 상단 타이틀 + 4컷 레이아웃
+              var bgColor = "#ffe68a";
+              var titleColor = "#111827";
+              var sideMargin = 48;
+              var topTitleY = 55;
+              var subTitleY = 95;
+              var photoStartY = 124;
+              var bottomTextArea = 54;
+              var gap = 4;
+              var slotW = outW - sideMargin * 2;
+              var slotH = Math.floor((outH - photoStartY - bottomTextArea - gap * 3 - 18) / 4);
+              var outCtx = out.getContext("2d");
+
+              out.width = outW;
+              out.height = outH;
+
+              // 전체 노란 배경
+              outCtx.fillStyle = bgColor;
+              outCtx.fillRect(0, 0, outW, outH);
+
+              // 상단 타이틀
+              outCtx.fillStyle = titleColor;
+              outCtx.textAlign = "center";
+              outCtx.textBaseline = "middle";
+              outCtx.font = "900 52px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+              outCtx.fillText("POKEMON FESTIVAL", outW / 2, topTitleY);
+
+              outCtx.font = "900 31px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+              outCtx.fillText("TEMI FOUR CUT", outW / 2, subTitleY);
+
+              // 사진 영역 바깥 흰색 받침/테두리 느낌
+              var frameX = sideMargin - 12;
+              var frameY = photoStartY - 12;
+              var frameW = slotW + 24;
+              var frameH = slotH * 4 + gap * 3 + 24;
+
+              outCtx.fillStyle = "#ffffff";
+              outCtx.fillRect(frameX, frameY, frameW, frameH);
+
+              items.forEach(function (item, index) {
+                var img = item.img;
+                var iw = img.naturalWidth || img.width;
+                var ih = img.naturalHeight || img.height;
+                var x = sideMargin;
+                var y = photoStartY + index * (slotH + gap);
+
+                // cover 방식으로 꽉 채우기
+                var scale = Math.max(slotW / iw, slotH / ih);
+                var dw = iw * scale;
+                var dh = ih * scale;
+                var dx = x + (slotW - dw) / 2;
+                var dy = y + (slotH - dh) / 2;
+
+                outCtx.save();
+                outCtx.beginPath();
+                outCtx.rect(x, y, slotW, slotH);
+                outCtx.clip();
+                outCtx.drawImage(img, dx, dy, dw, dh);
+                outCtx.restore();
+
+                // 사진과 사진 사이가 흰색으로 뜨지 않도록 얇은 어두운 경계
+                outCtx.lineWidth = 2;
+                outCtx.strokeStyle = "rgba(7, 25, 53, 0.55)";
+                outCtx.strokeRect(x, y, slotW, slotH);
+              });
+
+              // 하단 날짜
+              var now = new Date();
+              var dateText = now.toLocaleString("ko-KR", {
+                year: "numeric",
+                month: "numeric",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              });
+
+              outCtx.fillStyle = "#111827";
+              outCtx.textAlign = "center";
+              outCtx.textBaseline = "middle";
+              outCtx.font = "900 26px system-ui, -apple-system, BlinkMacSystemFont, sans-serif";
+              outCtx.fillText(dateText, outW / 2, outH - 24);
+
+              items.forEach(function (item) {
+                URL.revokeObjectURL(item.url);
+              });
+
+              out.toBlob(
+                function (blob) {
+                  if (!blob) {
+                    reject(new Error(isEnglish() ? "4-cut conversion failed." : "네컷 이미지 변환 실패"));
+                    return;
+                  }
+                  resolve(blob);
+                },
+                "image/png",
+                0.95
+              );
+            });
+          });
         }
 
         window.addEventListener("temi:photo-preview", function (event) {
@@ -573,7 +854,16 @@
 
           nativePreview.src = detail.dataUrl;
           nativePreview.hidden = false;
+          state.nativePreviewReady = true;
           hideNativeNotice();
+
+          if (!state.busy && state.filterPicked) {
+            shutter.disabled = false;
+          }
+
+          document.getElementById("shutterHint").textContent = isEnglish()
+            ? "Temi camera is ready. Press the button to take 4 photos."
+            : "Temi 카메라 준비 완료. 버튼을 누르면 4컷 촬영을 시작합니다.";
         });
 
         window.addEventListener("temi:photo-result", function (event) {
@@ -598,29 +888,32 @@
               return;
             }
 
-            state.busy = false;
-            shutter.disabled = false;
+            handleFourCutError(new Error(detail.message || (isEnglish() ? "Temi photo capture failed." : "Temi 사진 촬영 실패")));
+            return;
+          }
+
+          if (!detail.dataUrl) {
+            handleFourCutError(new Error(isEnglish() ? "No image data received." : "촬영 이미지 데이터가 없습니다."));
             return;
           }
 
           drawNativePhotoToBlob(detail.dataUrl)
             .then(function (blob) {
-              processCapturedBlob(blob);
+              handleFourCutShot(blob);
             })
-            .catch(function (e) {
-              state.busy = false;
-              shutter.disabled = false;
-              uploadStatus.hidden = false;
-              uploadStatus.textContent = e.message || (isEnglish() ? "Photo processing failed." : "사진 처리 실패");
-              alert(e.message || (isEnglish() ? "Photo processing failed." : "사진 처리 실패"));
-            });
+            .catch(handleFourCutError);
         });
 
-        shutter.addEventListener("click", snap);
+        shutter.addEventListener("click", startFourCutCapture);
 
         document.getElementById("btnRetake").addEventListener("click", function () {
           closeResult();
-          if (state.filterPicked) shutter.disabled = false;
+          state.fourCutActive = false;
+          state.fourCutShots = [];
+          state.fourCutIndex = 0;
+          if (state.filterPicked && (!state.nativeCamera || state.nativePreviewReady)) {
+            shutter.disabled = false;
+          }
         });
 
         document.addEventListener("contextmenu", function (e) {

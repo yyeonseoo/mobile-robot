@@ -1,6 +1,5 @@
 package com.example.test;
 
-import android.hardware.camera2.CameraManager;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
@@ -10,6 +9,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
@@ -80,17 +80,18 @@ public class MainActivity extends AppCompatActivity implements
 
     private long lastPreviewEmitMs = 0L;
 
-    // Spring Boot 서버가 실행 중인 PC/노트북 Wi-Fi IP
-    // Temi IP가 아니라 PC IP임
-    // 서버 노트북의 Wi-Fi IPv4 주소만 여기에 넣으면 됨.
-// 서버 노트북에서 ipconfig 했을 때 나오는 IPv4 주소.
-    private static final String SERVER_HOST = "172.100.4.100";
+    // 서버 노트북에서 ipconfig 했을 때 나오는 Wi-Fi IPv4 주소.
+    // Temi IP가 아니라 서버 노트북 IP임.
+    private static final String SERVER_HOST = "172.100.6.27";
 
     // Temi WebView가 받아올 화면 UI 서버
     private static final String TEMI_UI_URL = "http://" + SERVER_HOST + ":8080/temi/index.html";
 
     // Temi 위치를 모바일 UI로 중계할 Socket.IO 서버
     private static final String SOCKET_URL = "http://" + SERVER_HOST + ":3000";
+
+    // 모바일 인생네컷 명령을 받았을 때 Temi WebView에서 열 포토부스 페이지
+    private static final String PHOTO_CAPTURE_URL = "http://" + SERVER_HOST + ":8080/temi/photo-capture.html";
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
@@ -113,13 +114,17 @@ public class MainActivity extends AppCompatActivity implements
                 toast("모바일 정지 요청");
                 stopTemi();
             }
+
+            @Override
+            public void onPhotoBoothRequested() {
+                toast("모바일 인생네컷 요청");
+                startPhotoBoothFromMobile();
+            }
         });
         socketService.connect();
 
-        // Socket.IO 연결은 비동기라서 앱 시작 직후 테스트 신호를 몇 번 보낸다.
-        // /health에서 connected=true, updatedAt 변경 여부 확인용이다.
+        // Socket.IO 연결은 비동기라서 앱 시작 직후 테스트 신호를 보낸다.
         mainHandler.postDelayed(() -> emitSocketPosition("app_start", "starting"), 1000);
-        mainHandler.postDelayed(() -> emitSocketPosition("app_start", "starting"), 3000);
 
         webView = new WebView(this);
         setContentView(webView);
@@ -215,7 +220,7 @@ public class MainActivity extends AppCompatActivity implements
             int descriptionId,
             String description
     ) {
-        lastLocationId = location == null ? "" : location;
+        lastLocationId = normalizeTemiLocationName(location == null ? "" : location);
 
         if (OnGoToLocationStatusChangedListener.COMPLETE.equals(status)) {
             navState = "arrived";
@@ -240,9 +245,9 @@ public class MainActivity extends AppCompatActivity implements
 
     private void goToLocation(String locationName) {
         String rawTarget = locationName == null ? "" : locationName.trim();
-        String target = normalizeTemiLocationName(rawTarget);
+        String normalizedTarget = normalizeTemiLocationName(rawTarget);
 
-        if (target.isEmpty()) {
+        if (normalizedTarget.isEmpty()) {
             navState = "error";
             emitNavToWeb("error", "", "빈 위치명");
             toast("빈 위치명입니다.");
@@ -251,30 +256,74 @@ public class MainActivity extends AppCompatActivity implements
 
         List<String> locations = robot.getLocations();
 
-        if (locations == null || !locations.contains(target)) {
+        String target = resolveSavedTemiLocation(normalizedTarget, locations);
+
+        if (locations == null || target == null || !locations.contains(target)) {
             navState = "error";
 
             String msg = "저장된 위치에 없음: "
                     + rawTarget
                     + " → 변환값: "
-                    + target
+                    + normalizedTarget
                     + " / 현재 위치 목록: "
                     + locations;
 
-            emitNavToWeb("error", target, msg);
+            emitNavToWeb("error", normalizedTarget, msg);
             speak(rawTarget + " 위치가 없습니다.");
             toast(msg);
             return;
         }
 
-        lastLocationId = target;
+        lastLocationId = normalizeTemiLocationName(target);
         navState = "moving";
 
         robot.goTo(target);
 
-        emitNavToWeb("moving", target, "이동 시작: " + rawTarget + " → " + target);
-        emitSocketPosition(target, navState);
+        emitNavToWeb("moving", lastLocationId, "이동 시작: " + rawTarget + " → " + target);
+        emitSocketPosition(lastLocationId, navState);
         toast("이동 시작: " + rawTarget + " → " + target);
+    }
+
+    // 실제 Temi Map Editor에 저장된 이름을 찾는다.
+    // 핵심 수정: homebase / home base / home_base 혼동 방지.
+    private String resolveSavedTemiLocation(String normalizedTarget, List<String> locations) {
+        if (normalizedTarget == null || normalizedTarget.trim().isEmpty() || locations == null) {
+            return null;
+        }
+
+        String target = normalizedTarget.trim();
+
+        if (locations.contains(target)) {
+            return target;
+        }
+
+        String compact = target.replace(" ", "").replace("_", "").toLowerCase(Locale.ROOT);
+
+        if ("homebase".equals(compact)) {
+            if (locations.contains("homebase")) {
+                return "homebase";
+            }
+            if (locations.contains("home base")) {
+                return "home base";
+            }
+            if (locations.contains("home_base")) {
+                return "home_base";
+            }
+        }
+
+        for (String saved : locations) {
+            if (saved == null) {
+                continue;
+            }
+
+            String savedCompact = saved.replace(" ", "").replace("_", "").toLowerCase(Locale.ROOT);
+
+            if (savedCompact.equals(compact)) {
+                return saved;
+            }
+        }
+
+        return null;
     }
 
     private String normalizeTemiLocationName(String rawLocationName) {
@@ -283,76 +332,62 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         String key = rawLocationName.trim();
-        String compactKey = key.replace(" ", "");
+        String compactKey = key.replace(" ", "").replace("_", "").toLowerCase(Locale.ROOT);
 
         switch (compactKey) {
             case "a":
-            case "A":
             case "a존":
-            case "A존":
-            case "zone_a":
-            case "ZONE_A":
-            case "marker_1_1":
-            case "marker_1_2":
-            case "stamp_1":
+            case "zonea":
+            case "marker11":
+            case "marker12":
+            case "stamp1":
             case "1구역":
             case "1구역안내데스크":
                 return "a";
 
             case "b":
-            case "B":
             case "b존":
-            case "B존":
-            case "zone_b":
-            case "ZONE_B":
-            case "marker_2_1":
-            case "marker_2_2":
-            case "stamp_2":
+            case "zoneb":
+            case "marker21":
+            case "marker22":
+            case "stamp2":
             case "2구역":
             case "2구역체험존":
                 return "b";
 
             case "c":
-            case "C":
             case "c존":
-            case "C존":
-            case "zone_c":
-            case "ZONE_C":
-            case "marker_3_1":
-            case "marker_3_2":
-            case "stamp_3":
+            case "zonec":
+            case "marker31":
+            case "marker32":
+            case "stamp3":
             case "3구역":
             case "이벤트홀":
-            case "event_hall":
+            case "eventhall":
             case "events":
                 return "c";
 
             case "d":
-            case "D":
             case "d존":
-            case "D존":
-            case "zone_d":
-            case "ZONE_D":
+            case "zoned":
             case "4구역":
             case "특별기획":
             case "디지털아카이브":
-            case "digital_archive":
+            case "digitalarchive":
                 return "d";
 
             case "home":
-            case "HOME":
             case "homebase":
-            case "HOMEBASE":
-            case "home_base":
-            case "HOME_BASE":
             case "홈":
             case "홈복귀":
-            case "homebase복귀":
-            case "main":
-            case "main_hall":
             case "메인홀":
+            case "main":
+            case "mainhall":
             case "시작지점":
             case "출발지점":
+            case "temi":
+            case "테미":
+            case "테미부르기":
                 return "homebase";
 
             default:
@@ -379,9 +414,9 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     // 실제 Temi 좌표 API를 쓰지 않고도 모바일 UI가 바뀌는지 확인할 수 있게
-    // 전시 구역별 임시 좌표를 보낸다. 나중에 실제 좌표가 필요하면 여기만 실제값으로 교체하면 된다.
+    // 전시 구역별 임시 좌표를 보낸다.
     private float[] getUiPositionForLocation(String locationId) {
-        String key = locationId == null ? "" : locationId.trim();
+        String key = normalizeTemiLocationName(locationId == null ? "" : locationId.trim());
 
         switch (key) {
             case "a":
@@ -425,6 +460,29 @@ public class MainActivity extends AppCompatActivity implements
         emitSocketPosition(lastLocationId, navState);
         speak("정지했습니다.");
         toast("정지");
+    }
+
+    private void startPhotoBoothFromMobile() {
+        mainHandler.post(() -> {
+            try {
+                speak("카메라를 준비합니다. 화면의 촬영 버튼을 누르면 네 컷 촬영이 시작됩니다.");
+
+                if (webView == null) {
+                    toast("WebView가 준비되지 않았습니다.");
+                    return;
+                }
+
+                String url = PHOTO_CAPTURE_URL
+                        + "?ready=1"
+                        + "&t=" + System.currentTimeMillis();
+
+                webView.loadUrl(url);
+                toast("포토부스 준비 화면 실행");
+
+            } catch (Exception e) {
+                toast("포토부스 실행 실패: " + e.getMessage());
+            }
+        });
     }
 
     private void followMe() {
@@ -893,6 +951,15 @@ public class MainActivity extends AppCompatActivity implements
                             "  follow: function() {" +
                             "    try { window.TemiNative.follow(); } catch (e) { console.warn(e); }" +
                             "  }," +
+                            "  startPhotoBooth: function() {" +
+                            "    try {" +
+                            "      window.TemiNative.startPhotoBooth();" +
+                            "      return true;" +
+                            "    } catch (e) {" +
+                            "      console.warn('[TemiBridge injected] startPhotoBooth error', e);" +
+                            "      return false;" +
+                            "    }" +
+                            "  }," +
                             "  startCameraPreview: function() {" +
                             "    try {" +
                             "      window.TemiNative.startCameraPreview();" +
@@ -1075,6 +1142,11 @@ public class MainActivity extends AppCompatActivity implements
         @JavascriptInterface
         public void follow() {
             mainHandler.post(MainActivity.this::followMe);
+        }
+
+        @JavascriptInterface
+        public void startPhotoBooth() {
+            mainHandler.post(MainActivity.this::startPhotoBoothFromMobile);
         }
 
         @JavascriptInterface
