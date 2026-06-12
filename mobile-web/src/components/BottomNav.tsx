@@ -58,8 +58,8 @@ function TabItem({
       </span>
       <span
         className={
-          'text-[10px] font-bold leading-tight text-center whitespace-nowrap ' +
-          (label.length > 4 ? 'px-0.5 text-[9px]' : '') +
+          'text-[10px] font-bold leading-tight text-center ' +
+          (label.length > 4 ? 'px-0.5' : 'whitespace-nowrap') +
           ' ' +
           (isActive ? 'text-slate-900' : 'text-on-surface-variant')
         }

@@ -3,7 +3,7 @@ import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { formatXp, getQuizRank } from '../lib/quizXp'
 import { clearVisitorSession, getNickname, getPhone, getVisitorToken } from '../lib/storage'
-import { fetchVisitorProfile } from '../lib/visitorApi'
+import { fetchVisitorProfile, listVisitorPhotos, type VisitorPhotoItem } from '../lib/visitorApi'
 
 export default function ProfilePage() {
   const [token, setToken] = useState(() => getVisitorToken())
@@ -12,8 +12,8 @@ export default function ProfilePage() {
   const [quizXp, setQuizXp] = useState(0)
   const [photoCount, setPhotoCount] = useState(0)
   const [challengeCount, setChallengeCount] = useState(0)
-  const [eventActionCount, setEventActionCount] = useState(0)
   const [loading, setLoading] = useState(!!getVisitorToken())
+  const [photos, setPhotos] = useState<VisitorPhotoItem[]>([])
 
   useEffect(() => {
     if (!token) {
@@ -29,7 +29,8 @@ export default function ProfilePage() {
         setQuizXp(profile.quizXp)
         setPhotoCount(profile.photoCount)
         setChallengeCount(profile.recentChallenges?.length ?? 0)
-        setEventActionCount(profile.eventActions?.length ?? 0)
+        const items = await listVisitorPhotos()
+        setPhotos(items)
       } catch {
         // keep local cache
       } finally {
@@ -88,10 +89,6 @@ export default function ProfilePage() {
                 <span className="font-bold text-on-surface">{challengeCount}건 (최근)</span>
               </div>
               <div className="flex justify-between gap-3">
-                <span className="text-on-surface-variant">예약/알림</span>
-                <span className="font-bold text-on-surface">{eventActionCount}건</span>
-              </div>
-              <div className="flex justify-between gap-3">
                 <span className="text-on-surface-variant">토큰</span>
                 <span className="font-bold text-on-surface">{token ? '연결됨' : '없음'}</span>
               </div>
@@ -104,6 +101,35 @@ export default function ProfilePage() {
           >
             세션 초기화
           </button>
+        </section>
+
+        <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
+          <h3 className="font-headline-md text-headline-md text-on-surface">내 갤러리</h3>
+          <p className="text-on-surface-variant text-sm">
+            테미에서 찍은 인생네컷이 서버에 저장되면 여기에 표시됩니다. 사진을 눌러 저장할 수
+            있습니다.
+          </p>
+          {photos.length ? (
+            <div className="grid grid-cols-2 gap-gutter">
+              {photos.map((photo) => {
+                const abs = photo.imageUrl.startsWith('http')
+                  ? photo.imageUrl
+                  : `${location.origin}${photo.imageUrl}`
+                return (
+                  <a
+                    key={photo.id}
+                    href={abs}
+                    download={`pokeguide-${photo.id}.png`}
+                    className="block rounded-lg overflow-hidden border-2 border-surface-variant"
+                  >
+                    <img src={abs} alt="" className="w-full aspect-[3/4] object-cover" />
+                  </a>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-on-surface-variant">저장된 사진이 없습니다.</p>
+          )}
         </section>
       </main>
 

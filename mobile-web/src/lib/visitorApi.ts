@@ -24,14 +24,6 @@ export type VisitorProfile = {
   quizXp: number
   photoCount: number
   recentChallenges: QuizChallengeRecord[]
-  eventActions?: VisitorEventAction[]
-}
-
-export type VisitorEventAction = {
-  id: number
-  eventId: string
-  actionType: 'reserve' | 'alarm' | string
-  createdAt: string
 }
 
 export function normalizePhoneInput(raw: string): string {
@@ -86,19 +78,14 @@ export async function uploadVisitorPhoto(dataUrl: string, kind = 'strip'): Promi
   })
 }
 
-export async function listEventActions(): Promise<VisitorEventAction[]> {
-  if (!getVisitorToken()) return []
-  return jsonFetch<VisitorEventAction[]>('/api/visitor/event-actions', { headers: authHeaders() })
+export type VisitorPhotoItem = {
+  id: number
+  kind: string
+  imageUrl: string
+  createdAt: string
 }
 
-export async function setEventAction(
-  eventId: string,
-  actionType: 'reserve' | 'alarm',
-  enabled: boolean
-): Promise<VisitorEventAction[]> {
-  return jsonFetch<VisitorEventAction[]>('/api/visitor/event-actions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ eventId, actionType, enabled }),
-  })
+export async function listVisitorPhotos(): Promise<VisitorPhotoItem[]> {
+  if (!getVisitorToken()) return []
+  return jsonFetch<VisitorPhotoItem[]>('/api/visitor/photos', { headers: authHeaders() })
 }
