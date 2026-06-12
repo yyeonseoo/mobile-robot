@@ -47,7 +47,7 @@ public class PhotoBoothService {
     Path dir = storageRoot.resolve(token);
     Files.createDirectories(dir);
     String base = PublicBaseUrlResolver.resolve(properties.getPublicBaseUrl(), request);
-    String receiveUrl = base + "/mobile/photo-receive.html?token=" + token;
+    String receiveUrl = base + "/mobile/app/photo/receive?token=" + token;
     BoothSession session = new BoothSession(token, receiveUrl, dir, Instant.now(), new AtomicInteger(0));
     sessions.put(token, session);
     return session;

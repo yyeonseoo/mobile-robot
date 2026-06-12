@@ -77,3 +77,15 @@ export async function uploadVisitorPhoto(dataUrl: string, kind = 'strip'): Promi
     body: JSON.stringify({ dataUrl, kind }),
   })
 }
+
+export type VisitorPhotoItem = {
+  id: number
+  kind: string
+  imageUrl: string
+  createdAt: string
+}
+
+export async function listVisitorPhotos(): Promise<VisitorPhotoItem[]> {
+  if (!getVisitorToken()) return []
+  return jsonFetch<VisitorPhotoItem[]>('/api/visitor/photos', { headers: authHeaders() })
+}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
 import { authHeaders, jsonFetch } from '../lib/api'
+import { isStampCollected, STAMP_MAP_MARKERS } from '../lib/stampMapMarkers'
 
 type RallyMeta = { eventTitle: string }
 type RallyStatus = { collectedCount: number; totalSpots: number; completed: boolean }
@@ -120,7 +121,7 @@ export default function StampRallyPage() {
           </p>
         </section>
 
-        <section className="flex flex-col items-center py-sm">
+        <section className="flex flex-col items-center py-sm space-y-sm">
           <button
             type="button"
             onClick={() => nav('/scan')}
@@ -139,6 +140,10 @@ export default function StampRallyPage() {
               QR 스캔하기
             </span>
           </button>
+          <p className="max-w-sm text-center text-on-surface-variant text-sm leading-relaxed px-md">
+            모바일 웹 카메라 대신 <strong className="text-on-surface">휴대폰 기본 카메라 앱</strong>으로
+            전시장 QR을 스캔해 주세요. 스캔 후 이 앱으로 돌아오면 스탬프가 적립됩니다.
+          </p>
         </section>
 
         <section className="bg-surface-container-lowest rounded-lg p-md neumorphic-shadow border-4 border-surface-variant relative overflow-hidden">
@@ -175,29 +180,37 @@ export default function StampRallyPage() {
 
         <section className="rounded-lg overflow-hidden neumorphic-shadow border-4 border-white aspect-square relative bg-tertiary-container">
           <img className="w-full h-full object-cover" alt="스탬프 랠리 지도" src={MAP_IMG} />
-          <div className="absolute top-1/4 left-1/3 group">
-            <div className="bg-white p-1 rounded-full border-4 border-secondary-container shadow-lg scale-110 active:scale-90 transition-transform">
-              <span
-                className="material-symbols-outlined text-secondary"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+          {STAMP_MAP_MARKERS.map((marker) => {
+            const done = isStampCollected(stamps, marker.code)
+            return (
+              <div
+                key={marker.code}
+                className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none"
+                style={{ left: `${marker.left}%`, top: `${marker.top}%` }}
               >
-                home_pin
-              </span>
-            </div>
-          </div>
-          <div className="absolute bottom-1/3 right-1/4">
-            <div className="bg-white p-1 rounded-full border-4 border-tertiary shadow-lg opacity-80">
-              <span className="material-symbols-outlined text-tertiary">location_on</span>
-            </div>
-          </div>
+                <div
+                  className={
+                    'min-w-[54px] h-[34px] px-2 rounded-full flex items-center justify-center border-4 border-white font-black text-sm text-white shadow-md ' +
+                    (done ? 'bg-green-600' : 'bg-slate-900/90')
+                  }
+                >
+                  {done ? `✓ ${marker.label}` : marker.label}
+                </div>
+                <span className="mt-1 px-2 py-0.5 rounded-full bg-white/95 text-[10px] font-black text-slate-900 whitespace-nowrap">
+                  {marker.name} · {done ? '방문 완료' : '미방문'}
+                </span>
+              </div>
+            )
+          })}
         </section>
 
         <section className="space-y-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface">나의 뱃지</h3>
           <div className="grid grid-cols-3 gap-gutter">
             {DEMO_BADGES.map((badge, i) => {
-              const stamp = stamps[i]
-              const unlocked = !!stamp
+              const code = STAMP_MAP_MARKERS[i]?.code
+              const stamp = stamps.find((s) => s.spotCode === code) || stamps[i]
+              const unlocked = code ? isStampCollected(stamps, code) : !!stamp
               return (
                 <div
                   key={badge.label}

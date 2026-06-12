@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { emitGotoHomebase } from '../lib/temiSocket'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import BottomNav from '../components/BottomNav'
@@ -236,12 +237,23 @@ export default function MapPage() {
         <button
           type="button"
           className="w-full bg-primary-container rounded-lg p-6 flex items-center justify-between toy-button-shadow border-2 border-primary/20 hover:opacity-90 transition-all"
+          onClick={() => {
+            void emitGotoHomebase()
+              .then(() => alert('테미를 홈베이스(대기 위치)로 이동시켰습니다.'))
+              .catch((e) =>
+                alert(
+                  e instanceof Error
+                    ? e.message
+                    : '명령 전송에 실패했습니다. 소켓 서버(포트 3000)를 확인해 주세요.'
+                )
+              )
+          }}
         >
           <div className="text-left">
             <p className="font-label-bold text-on-primary-fixed-variant uppercase text-xs tracking-wider mb-1">
-              길을 잃으셨나요? 파트너를 부르세요!
+              길을 잃으셨나요?
             </p>
-            <h3 className="font-headline-md text-headline-md text-on-primary-fixed">테미 부르기</h3>
+            <h3 className="font-headline-md text-headline-md text-on-primary-fixed">홈베이스로 이동</h3>
           </div>
           <div className="w-16 h-16 bg-white/40 rounded-full flex items-center justify-center">
             <span
