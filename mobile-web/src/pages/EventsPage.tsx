@@ -27,6 +27,7 @@ const UPCOMING_EVENTS = [
     image: CAPTURE_CONTEST_IMG,
     cta: '참가',
     ctaClass: 'bg-secondary-container text-white',
+    actionType: 'join',
     meta: '12k+ 참가',
   },
   {
@@ -36,8 +37,9 @@ const UPCOMING_EVENTS = [
     badge: '오늘 17시 시작',
     badgeClass: 'bg-[#ffdd2d] text-slate-950',
     image: PIKACHU_IMG,
-    cta: '알림 받기',
+    cta: '참가 등록',
     ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
     meta: '센트럴 광장',
   },
   {
@@ -47,8 +49,9 @@ const UPCOMING_EVENTS = [
     badge: '오늘 15시 시작',
     badgeClass: 'bg-[#ffdd2d] text-slate-950',
     image: EEVEE_IMG,
-    cta: '알림 받기',
+    cta: '참가 등록',
     ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
     meta: '센트럴 가든',
   },
   {
@@ -58,8 +61,9 @@ const UPCOMING_EVENTS = [
     badge: '오늘 19시 시작',
     badgeClass: 'bg-[#ffdd2d] text-slate-950',
     image: PIKACHU_IMG,
-    cta: '알림 받기',
+    cta: '참가 등록',
     ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
     meta: '배틀 아레나',
   },
 ] as const
@@ -89,12 +93,6 @@ const RECOMMEND_PRESETS = [
     chipClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
   },
 ] as const
-
-const EVENT_START_HOURS: Record<string, number> = {
-  eevee: 15,
-  mascot: 17,
-  battle: 19,
-}
 
 type PokedexEntry = {
   number: number
@@ -217,64 +215,17 @@ export default function EventsPage() {
     window.setTimeout(() => setToast(''), 2800)
   }
 
-  async function joinEvent(eventId: string, title: string) {
+  async function registerEvent(eventId: string, title: string, actionType: 'join' | 'pending') {
     if (!getVisitorToken()) {
       navigate('/enter?next=events')
       return
     }
     try {
-      await recordVisitorEventAction(eventId, 'join')
-      flash(`${title} 참가 내역이 저장됐어요.`)
+      await recordVisitorEventAction(eventId, actionType)
+      flash(`${title} ${actionType === 'join' ? '참가 내역' : '참가 대기'}가 저장됐어요.`)
     } catch (e) {
-      flash(e instanceof Error ? e.message : '참가 내역 저장에 실패했어요.')
+      flash(e instanceof Error ? e.message : '이벤트 등록에 실패했어요.')
     }
-  }
-
-  async function setEventReminder(eventId: string, title: string) {
-    if (!('Notification' in window)) {
-      flash('이 브라우저에서는 알림을 지원하지 않아요.')
-      return
-    }
-
-    let permission = Notification.permission
-    if (permission === 'default') {
-      permission = await Notification.requestPermission()
-    }
-    if (permission !== 'granted') {
-      flash('브라우저 알림 권한이 필요해요.')
-      return
-    }
-
-    const startHour = EVENT_START_HOURS[eventId]
-    if (startHour == null) {
-      flash(`${title} 알림을 받을 수 있는 시간이 아직 없어요.`)
-      return
-    }
-
-    const notifyAt = new Date()
-    notifyAt.setHours(startHour, 0, 0, 0)
-    notifyAt.setMinutes(notifyAt.getMinutes() - 10)
-    const delay = notifyAt.getTime() - Date.now()
-
-    localStorage.setItem(
-      `eventReminder:${eventId}`,
-      JSON.stringify({ eventId, title, notifyAt: notifyAt.toISOString() })
-    )
-
-    if (delay > 0) {
-      window.setTimeout(() => {
-        new Notification(`${title} 시작 10분 전`, {
-          body: '이벤트가 곧 시작됩니다.',
-        })
-      }, Math.min(delay, 2147483647))
-      flash(`${title} 알림을 설정했어요.`)
-      return
-    }
-
-    new Notification(`${title} 알림`, {
-      body: '오늘 예정된 이벤트입니다.',
-    })
-    flash(`${title} 알림을 보냈어요.`)
   }
 
   async function searchPokedex() {
@@ -587,8 +538,8 @@ export default function EventsPage() {
                 }
                 role="button"
                 tabIndex={0}
-                onClick={() => void setEventReminder(card.id, card.title)}
-                onKeyDown={(e) => e.key === 'Enter' && void setEventReminder(card.id, card.title)}
+                onClick={() => void registerEvent(card.id, card.title, 'pending')}
+                onKeyDown={(e) => e.key === 'Enter' && void registerEvent(card.id, card.title, 'pending')}
               >
                 {card.tag ? (
                   <div className="absolute top-0 left-0 bg-[#ffdd2d] text-slate-950 text-[10px] font-label-bold px-3 py-1 rounded-br-lg z-10 shadow-sm">
@@ -624,10 +575,10 @@ export default function EventsPage() {
                       }
                       onClick={(e) => {
                         e.stopPropagation()
-                        void setEventReminder(card.id, card.title)
+                        void registerEvent(card.id, card.title, 'pending')
                       }}
                     >
-                      알림 받기
+                      참가 등록
                     </button>
                   </div>
                 </div>
@@ -681,13 +632,7 @@ export default function EventsPage() {
                     <button
                       type="button"
                       className={'font-label-bold px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
-                      onClick={() => {
-                        if (ev.cta === '참가') {
-                          void joinEvent(ev.id, ev.title)
-                          return
-                        }
-                        void setEventReminder(ev.id, ev.title)
-                      }}
+                      onClick={() => void registerEvent(ev.id, ev.title, ev.actionType)}
                     >
                       {ev.cta}
                     </button>

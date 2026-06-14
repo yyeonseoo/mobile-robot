@@ -17,6 +17,13 @@ const EVENT_TITLES: Record<string, string> = {
   mascot: '마스코트 미팅',
 }
 
+const EVENT_STATUS: Record<string, 'running' | 'scheduled'> = {
+  capture: 'running',
+  eevee: 'scheduled',
+  mascot: 'scheduled',
+  battle: 'scheduled',
+}
+
 export default function ProfilePage() {
   const [token, setToken] = useState(() => getVisitorToken())
   const [nick, setNick] = useState(() => getNickname())
@@ -54,7 +61,13 @@ export default function ProfilePage() {
   }, [token])
 
   const rank = getQuizRank(quizXp)
-  const joinedEvents = eventActions.filter((item) => item.actionType === 'join')
+  const registeredEvents = Array.from(
+    new Map(
+      eventActions
+        .filter((item) => item.actionType === 'join' || item.actionType === 'pending')
+        .map((item) => [item.eventId, item])
+    ).values()
+  )
 
   function reset() {
     clearVisitorSession()
@@ -120,33 +133,43 @@ export default function ProfilePage() {
         </section>
 
         <section className="bg-white border-8 border-white rounded-lg p-md neomorph-card space-y-sm">
-          <h3 className="font-headline-md text-headline-md text-on-surface">참여중인 이벤트</h3>
+          <h3 className="font-headline-md text-headline-md text-on-surface">등록한 이벤트</h3>
           <p className="text-on-surface-variant text-sm">
-            이벤트 화면에서 참가하기를 누른 항목입니다.
+            진행 중인 이벤트는 참가중, 시작 전 이벤트는 참가 대기로 표시됩니다.
           </p>
-          {joinedEvents.length ? (
+          {registeredEvents.length ? (
             <div className="space-y-sm">
-              {joinedEvents.map((event) => (
-                <div
-                  key={`${event.eventId}-${event.id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-surface-container-low p-sm border-2 border-surface-variant"
-                >
-                  <div className="min-w-0">
-                    <p className="font-label-bold text-on-surface truncate">
-                      {EVENT_TITLES[event.eventId] || event.eventId}
-                    </p>
-                    <p className="text-xs text-on-surface-variant">
-                      {new Date(event.createdAt).toLocaleString()}
-                    </p>
+              {registeredEvents.map((event) => {
+                const isRunning = EVENT_STATUS[event.eventId] === 'running'
+                return (
+                  <div
+                    key={`${event.eventId}-${event.id}`}
+                    className="flex items-center justify-between gap-3 rounded-lg bg-surface-container-low p-sm border-2 border-surface-variant"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-label-bold text-on-surface truncate">
+                        {EVENT_TITLES[event.eventId] || event.eventId}
+                      </p>
+                      <p className="text-xs text-on-surface-variant">
+                        {new Date(event.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        'shrink-0 rounded-full px-3 py-1 text-xs font-label-bold ' +
+                        (isRunning
+                          ? 'bg-secondary-container text-white'
+                          : 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]')
+                      }
+                    >
+                      {isRunning ? '참가중' : '참가 대기'}
+                    </span>
                   </div>
-                  <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-label-bold text-white">
-                    참가중
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
-            <p className="text-sm text-on-surface-variant">참여중인 이벤트가 없습니다.</p>
+            <p className="text-sm text-on-surface-variant">등록한 이벤트가 없습니다.</p>
           )}
         </section>
 
