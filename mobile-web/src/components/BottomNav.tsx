@@ -15,6 +15,7 @@ function activeTabFromPath(pathname: string, search: string): TabKey | null {
   if (pathname.startsWith('/rally')) return 'rally'
   if (pathname.startsWith('/map')) return 'map'
   if (pathname.startsWith('/camera')) return 'camera'
+  if (pathname.startsWith('/profile')) return 'profile'
   return null
 }
 
@@ -78,7 +79,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto w-full max-w-lg min-w-[300px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-2 py-2.5">
+      <div className="pointer-events-auto w-full max-w-xl min-w-[320px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-2 py-2.5">
         <div className="flex w-full flex-row items-end justify-between gap-0.5">
           {TABS.map((tab) => (
             <TabItem

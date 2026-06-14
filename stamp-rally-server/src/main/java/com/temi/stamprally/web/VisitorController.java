@@ -4,6 +4,8 @@ import com.temi.stamprally.visitor.VisitorProfileService;
 import com.temi.stamprally.web.dto.QuizChallengeSubmitRequest;
 import com.temi.stamprally.web.dto.QuizXpResponse;
 import com.temi.stamprally.web.dto.QuizXpSyncRequest;
+import com.temi.stamprally.web.dto.VisitorEventActionRequest;
+import com.temi.stamprally.web.dto.VisitorEventActionResponse;
 import com.temi.stamprally.web.dto.VisitorPhotoResponse;
 import com.temi.stamprally.web.dto.VisitorPhotoUploadRequest;
 import com.temi.stamprally.web.dto.VisitorProfileResponse;
@@ -55,6 +57,20 @@ public class VisitorController {
       @RequestBody QuizXpSyncRequest body) {
     int total = body != null ? body.totalXp() : 0;
     return visitorProfileService.syncQuizXp(visitorToken, total);
+  }
+
+  @PostMapping("/event-actions")
+  @ResponseStatus(HttpStatus.CREATED)
+  public VisitorEventActionResponse saveEventAction(
+      @RequestHeader(LocationController.VISITOR_TOKEN_HEADER) String visitorToken,
+      @RequestBody VisitorEventActionRequest body) {
+    return visitorProfileService.saveEventAction(visitorToken, body);
+  }
+
+  @GetMapping("/event-actions")
+  public List<VisitorEventActionResponse> listEventActions(
+      @RequestHeader(LocationController.VISITOR_TOKEN_HEADER) String visitorToken) {
+    return visitorProfileService.listEventActions(visitorToken);
   }
 
   @PostMapping("/photos")

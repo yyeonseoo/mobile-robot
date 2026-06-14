@@ -2,13 +2,17 @@ package com.temi.stamprally.visitor;
 
 import com.temi.stamprally.domain.QuizChallengeRecord;
 import com.temi.stamprally.domain.Visitor;
+import com.temi.stamprally.domain.VisitorEventAction;
 import com.temi.stamprally.domain.VisitorPhoto;
 import com.temi.stamprally.repo.QuizChallengeRecordRepository;
+import com.temi.stamprally.repo.VisitorEventActionRepository;
 import com.temi.stamprally.repo.VisitorPhotoRepository;
 import com.temi.stamprally.repo.VisitorRepository;
 import com.temi.stamprally.web.dto.QuizChallengeRecordResponse;
 import com.temi.stamprally.web.dto.QuizChallengeSubmitRequest;
 import com.temi.stamprally.web.dto.QuizXpResponse;
+import com.temi.stamprally.web.dto.VisitorEventActionRequest;
+import com.temi.stamprally.web.dto.VisitorEventActionResponse;
 import com.temi.stamprally.web.dto.VisitorPhotoResponse;
 import com.temi.stamprally.web.dto.VisitorProfileResponse;
 import com.temi.stamprally.web.dto.VisitorSessionResponse;
@@ -32,17 +36,20 @@ public class VisitorProfileService {
 
   private final VisitorRepository visitorRepository;
   private final VisitorPhotoRepository visitorPhotoRepository;
+  private final VisitorEventActionRepository visitorEventActionRepository;
   private final QuizChallengeRecordRepository quizChallengeRecordRepository;
   private final Path storageRoot;
 
   public VisitorProfileService(
       VisitorRepository visitorRepository,
       VisitorPhotoRepository visitorPhotoRepository,
+      VisitorEventActionRepository visitorEventActionRepository,
       QuizChallengeRecordRepository quizChallengeRecordRepository,
       VisitorProfileProperties properties)
       throws IOException {
     this.visitorRepository = visitorRepository;
     this.visitorPhotoRepository = visitorPhotoRepository;
+    this.visitorEventActionRepository = visitorEventActionRepository;
     this.quizChallengeRecordRepository = quizChallengeRecordRepository;
     if (StringUtils.hasText(properties.getStorageDir())) {
       this.storageRoot = Path.of(properties.getStorageDir()).toAbsolutePath().normalize();
@@ -77,7 +84,38 @@ public class VisitorProfileService {
         v.getPhoneNumber(),
         v.getQuizXp(),
         visitorPhotoRepository.countByVisitor(v),
-        recent);
+        recent,
+        visitorEventActionRepository.findByVisitorOrderByCreatedAtDesc(v).stream()
+            .map(this::toEventActionResponse)
+            .toList());
+  }
+
+  @Transactional
+  public VisitorEventActionResponse saveEventAction(String token, VisitorEventActionRequest body) {
+    if (body == null || !StringUtils.hasText(body.eventId())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "eventId required");
+    }
+    Visitor v = findVisitor(token);
+    String eventId = normalizeEventId(body.eventId());
+    String actionType = normalizeActionType(body.actionType());
+
+    return visitorEventActionRepository
+        .findByVisitorAndEventIdAndActionType(v, eventId, actionType)
+        .map(this::toEventActionResponse)
+        .orElseGet(
+            () -> {
+              VisitorEventAction action = VisitorEventAction.create(v, eventId, actionType);
+              visitorEventActionRepository.save(action);
+              return toEventActionResponse(action);
+            });
+  }
+
+  @Transactional(readOnly = true)
+  public List<VisitorEventActionResponse> listEventActions(String token) {
+    Visitor v = findVisitor(token);
+    return visitorEventActionRepository.findByVisitorOrderByCreatedAtDesc(v).stream()
+        .map(this::toEventActionResponse)
+        .toList();
   }
 
   @Transactional
@@ -198,6 +236,27 @@ public class VisitorProfileService {
     return k.replaceAll("[^a-z0-9_-]", "");
   }
 
+  private static String normalizeEventId(String eventId) {
+    String id = eventId.trim().toLowerCase(Locale.ROOT);
+    if (id.length() > 64) {
+      id = id.substring(0, 64);
+    }
+    id = id.replaceAll("[^a-z0-9_-]", "");
+    if (id.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid eventId");
+    }
+    return id;
+  }
+
+  private static String normalizeActionType(String actionType) {
+    String action = StringUtils.hasText(actionType) ? actionType.trim().toLowerCase(Locale.ROOT) : "join";
+    if (action.length() > 16) {
+      action = action.substring(0, 16);
+    }
+    action = action.replaceAll("[^a-z0-9_-]", "");
+    return action.isBlank() ? "join" : action;
+  }
+
   private static byte[] decodeDataUrl(String dataUrl) {
     String payload = dataUrl;
     int comma = dataUrl.indexOf(',');
@@ -231,5 +290,10 @@ public class VisitorProfileService {
         p.getKind(),
         "/api/visitor/photos/" + p.getId() + "/image",
         p.getCreatedAt().toString());
+  }
+
+  private VisitorEventActionResponse toEventActionResponse(VisitorEventAction a) {
+    return new VisitorEventActionResponse(
+        a.getId(), a.getEventId(), a.getActionType(), a.getCreatedAt().toString());
   }
 }
