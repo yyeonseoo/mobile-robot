@@ -11,8 +11,11 @@ const FESTIVAL_HERO_IMG = `${import.meta.env.BASE_URL}events/pokemon-festival-20
 const PIKACHU_IMG =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCmeFMffqzWnH5Kb3OyRpQ_zrSL--lR_TMrKMXRfKqEhyZUlkV9hutiTwBoHqRe5TarDZTgTcjxqiEUK7-NCiWp9EiAr0B7Mavh-pJrTS-kcvjdV3YeCeCF9pYWWSzLNGd1zW4V9irloj9WUm16tOtTnpD2dZDqo7M4wxEkfNFZBfxqsmLV1fI58IHWZ1g7Y50Iz4Ukc8Di662F2Zt8IxkaTwgAEV2nK54KxQeIbRi2nNPmLGFBUiebxoCdI3SUIUzYnM8J1wNdo4Y'
 
-const EEVEE_IMG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuB27VS2sfzZM76QP7qVemWulwtDAcke7VH0y8Du29wiRQu21szAdDUZ8R4ykpiLbpcx2u6hmViLQomxWO0dojL9rrShiFbEwx-TN_nUThiXb7W6A93iJE95O8q8T9Z2vgy1wnbIznf0U4_SAB_pCltHWShgBI0f-TGmHSX24ce-xR661zveb1KsuON-5nQRoBD_4u-F5Lxrss-ZfywLsAKkcyxWYqIXvpwHRauZCkKKd8Jj-4Sd1RCIxGqtfOrvmgpFrkNFeU3GMhw'
+const MASCOT_MEETING_IMG = `${import.meta.env.BASE_URL}events/mascot-meeting.png`
+
+const EEVEE_IMG = `${import.meta.env.BASE_URL}events/eevee-friends-garden-party.png`
+
+const MEGA_BATTLE_TOURNAMENT_IMG = `${import.meta.env.BASE_URL}events/mega-battle-tournament.png`
 
 const CAPTURE_CONTEST_IMG =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCUHj3_iNkkg2JYNvYUJLbKFeGfNtzb1R5hsCfcR3kv66OXfbJ6ojt5dKo2oa2ZmFtz1S8CJSDMbc0RPstVNsV6RCUuGuFPDZoyefP_RqTEDtKKZ6QNGvTY4Jy0SNC6YOREZo3saUmNjknN3-UpPcQIRaMSgg6bs3hm3JHNU6iuvvYLwkPlUjyfQxPz-1V6FXI4LbBtTzW0KObDR3gy7xavMwj-XdSdg4KFnNWsrDCGzuMaE8DA0m7qzmXkqJNrXGZElWgjGAIMNBY'
@@ -36,7 +39,7 @@ const UPCOMING_EVENTS = [
     desc: '센트럴 광장에서 피카츄를 만나보세요. 사진도 찍고 스티커도 받으세요!',
     badge: '오늘 17시 시작',
     badgeClass: 'bg-[#ffdd2d] text-slate-950',
-    image: PIKACHU_IMG,
+    image: MASCOT_MEETING_IMG,
     cta: '참가 등록',
     ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
     actionType: 'pending',
@@ -60,7 +63,7 @@ const UPCOMING_EVENTS = [
     desc: '배틀 도전을 즐기는 트레이너를 위한 토너먼트입니다. 전략을 세워 우승에 도전하세요.',
     badge: '오늘 19시 시작',
     badgeClass: 'bg-[#ffdd2d] text-slate-950',
-    image: PIKACHU_IMG,
+    image: MEGA_BATTLE_TOURNAMENT_IMG,
     cta: '참가 등록',
     ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
     actionType: 'pending',
@@ -74,7 +77,7 @@ const RECOMMEND_PRESETS = [
     tag: 'BEST MATCH',
     reason: '이브이를 좋아하시니까 추천드려요!',
     time: '오늘 15시 시작',
-    image: CAPTURE_CONTEST_IMG,
+    image: EEVEE_IMG,
     thumbClass: 'bg-[#fff3a6]',
     borderClass: 'border-[#ffe45c] hover:border-[#ffcb05]',
     btnClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
@@ -86,7 +89,7 @@ const RECOMMEND_PRESETS = [
     tag: null,
     reason: '배틀·도전을 즐기시면 딱 맞아요!',
     time: '오늘 19시 시작',
-    image: PIKACHU_IMG,
+    image: MEGA_BATTLE_TOURNAMENT_IMG,
     thumbClass: 'bg-tertiary-fixed',
     borderClass: 'border-[#ffe45c] hover:border-[#ffcb05]',
     btnClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
