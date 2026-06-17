@@ -1,15 +1,24 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
 import DailyChallengePanel from '../components/DailyChallengePanel'
+import { getVisitorToken } from '../lib/storage'
+import { recordVisitorEventAction } from '../lib/visitorApi'
 
 const FESTIVAL_HERO_IMG = `${import.meta.env.BASE_URL}events/pokemon-festival-2026.png`
 
 const PIKACHU_IMG =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCmeFMffqzWnH5Kb3OyRpQ_zrSL--lR_TMrKMXRfKqEhyZUlkV9hutiTwBoHqRe5TarDZTgTcjxqiEUK7-NCiWp9EiAr0B7Mavh-pJrTS-kcvjdV3YeCeCF9pYWWSzLNGd1zW4V9irloj9WUm16tOtTnpD2dZDqo7M4wxEkfNFZBfxqsmLV1fI58IHWZ1g7Y50Iz4Ukc8Di662F2Zt8IxkaTwgAEV2nK54KxQeIbRi2nNPmLGFBUiebxoCdI3SUIUzYnM8J1wNdo4Y'
 
-const EEVEE_IMG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuB27VS2sfzZM76QP7qVemWulwtDAcke7VH0y8Du29wiRQu21szAdDUZ8R4ykpiLbpcx2u6hmViLQomxWO0dojL9rrShiFbEwx-TN_nUThiXb7W6A93iJE95O8q8T9Z2vgy1wnbIznf0U4_SAB_pCltHWShgBI0f-TGmHSX24ce-xR661zveb1KsuON-5nQRoBD_4u-F5Lxrss-ZfywLsAKkcyxWYqIXvpwHRauZCkKKd8Jj-4Sd1RCIxGqtfOrvmgpFrkNFeU3GMhw'
+const MASCOT_MEETING_IMG = `${import.meta.env.BASE_URL}events/mascot-meeting.png`
+
+const EEVEE_IMG = `${import.meta.env.BASE_URL}events/eevee-friends-garden-party.png`
+
+const MEGA_BATTLE_TOURNAMENT_IMG = `${import.meta.env.BASE_URL}events/mega-battle-tournament.png`
+
+const CAPTURE_CONTEST_IMG =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCUHj3_iNkkg2JYNvYUJLbKFeGfNtzb1R5hsCfcR3kv66OXfbJ6ojt5dKo2oa2ZmFtz1S8CJSDMbc0RPstVNsV6RCUuGuFPDZoyefP_RqTEDtKKZ6QNGvTY4Jy0SNC6YOREZo3saUmNjknN3-UpPcQIRaMSgg6bs3hm3JHNU6iuvvYLwkPlUjyfQxPz-1V6FXI4LbBtTzW0KObDR3gy7xavMwj-XdSdg4KFnNWsrDCGzuMaE8DA0m7qzmXkqJNrXGZElWgjGAIMNBY'
 
 const UPCOMING_EVENTS = [
   {
@@ -17,36 +26,61 @@ const UPCOMING_EVENTS = [
     title: '포획 콘테스트',
     desc: '전 세계 트레이너들과 함께 사파리 존으로! 가장 무거운 개체를 잡아서 우승하세요.',
     badge: '진행 중',
-    badgeClass: 'bg-secondary-container text-on-secondary-container',
-    image: EEVEE_IMG,
+    badgeClass: 'bg-secondary-container text-white',
+    image: CAPTURE_CONTEST_IMG,
     cta: '참가',
-    ctaClass: 'bg-tertiary text-white',
+    ctaClass: 'bg-secondary-container text-white',
+    actionType: 'join',
     meta: '12k+ 참가',
   },
   {
     id: 'mascot',
     title: '마스코트 미팅',
     desc: '센트럴 광장에서 피카츄를 만나보세요. 사진도 찍고 스티커도 받으세요!',
-    badge: '2시간 후 시작',
-    badgeClass: 'bg-primary-container text-on-primary-container',
-    image: PIKACHU_IMG,
-    cta: '알림 받기',
-    ctaClass: 'bg-surface-variant text-on-surface-variant',
+    badge: '오늘 17시 시작',
+    badgeClass: 'bg-[#ffdd2d] text-slate-950',
+    image: MASCOT_MEETING_IMG,
+    cta: '참가 등록',
+    ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
     meta: '센트럴 광장',
   },
+  {
+    id: 'eevee',
+    title: '이브이 프렌즈 가든 파티',
+    desc: '이브이 팬들을 위한 가든 파티입니다. 포토존과 미니 굿즈 이벤트를 함께 즐겨보세요.',
+    badge: '오늘 15시 시작',
+    badgeClass: 'bg-[#ffdd2d] text-slate-950',
+    image: EEVEE_IMG,
+    cta: '참가 등록',
+    ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
+    meta: '센트럴 가든',
+  },
+  {
+    id: 'battle',
+    title: '메가 배틀 토너먼트',
+    desc: '배틀 도전을 즐기는 트레이너를 위한 토너먼트입니다. 전략을 세워 우승에 도전하세요.',
+    badge: '오늘 19시 시작',
+    badgeClass: 'bg-[#ffdd2d] text-slate-950',
+    image: MEGA_BATTLE_TOURNAMENT_IMG,
+    cta: '참가 등록',
+    ctaClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
+    actionType: 'pending',
+    meta: '배틀 아레나',
+  },
 ] as const
-
 const RECOMMEND_PRESETS = [
   {
     id: 'eevee',
     title: '이브이 프렌즈 가든 파티',
     tag: 'BEST MATCH',
     reason: '이브이를 좋아하시니까 추천드려요!',
-    time: '오늘 오후 3시',
+    time: '오늘 15시 시작',
     image: EEVEE_IMG,
-    thumbClass: 'bg-primary-fixed',
-    borderClass: 'border-primary/20 hover:border-primary/40',
-    btnClass: 'bg-primary text-on-primary',
+    thumbClass: 'bg-[#fff3a6]',
+    borderClass: 'border-[#ffe45c] hover:border-[#ffcb05]',
+    btnClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
     chipClass: 'bg-secondary-fixed text-on-secondary-fixed',
   },
   {
@@ -54,11 +88,11 @@ const RECOMMEND_PRESETS = [
     title: '메가 배틀 토너먼트',
     tag: null,
     reason: '배틀·도전을 즐기시면 딱 맞아요!',
-    time: '오늘 저녁 7시',
-    image: PIKACHU_IMG,
+    time: '오늘 19시 시작',
+    image: MEGA_BATTLE_TOURNAMENT_IMG,
     thumbClass: 'bg-tertiary-fixed',
-    borderClass: 'border-tertiary/20 hover:border-tertiary/40',
-    btnClass: 'bg-tertiary text-white',
+    borderClass: 'border-[#ffe45c] hover:border-[#ffcb05]',
+    btnClass: 'bg-[#ffdd2d] text-slate-950 border-2 border-[#f3bd00]',
     chipClass: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
   },
 ] as const
@@ -161,6 +195,7 @@ async function callAiRecommend(body: object): Promise<string> {
 }
 
 export default function EventsPage() {
+  const navigate = useNavigate()
   const aiSectionRef = useRef<HTMLElement>(null)
   const [pokedexQuery, setPokedexQuery] = useState('')
   const [pokedexEntry, setPokedexEntry] = useState<PokedexEntry | null>(null)
@@ -173,12 +208,27 @@ export default function EventsPage() {
   const [recommendNote, setRecommendNote] = useState('')
   const [recommendBusy, setRecommendBusy] = useState(false)
   const [showRecommendPrefs, setShowRecommendPrefs] = useState(false)
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
 
   const [toast, setToast] = useState('')
+  const visibleUpcomingEvents = showAllUpcoming ? UPCOMING_EVENTS : UPCOMING_EVENTS.slice(0, 2)
 
   function flash(msg: string) {
     setToast(msg)
     window.setTimeout(() => setToast(''), 2800)
+  }
+
+  async function registerEvent(eventId: string, title: string, actionType: 'join' | 'pending') {
+    if (!getVisitorToken()) {
+      navigate('/enter?next=events')
+      return
+    }
+    try {
+      await recordVisitorEventAction(eventId, actionType)
+      flash(`${title} ${actionType === 'join' ? '참가 내역' : '참가 대기'}가 저장됐어요.`)
+    } catch (e) {
+      flash(e instanceof Error ? e.message : '이벤트 등록에 실패했어요.')
+    }
   }
 
   async function searchPokedex() {
@@ -491,11 +541,11 @@ export default function EventsPage() {
                 }
                 role="button"
                 tabIndex={0}
-                onClick={() => flash(`${card.title} — 참가 신청 데모`)}
-                onKeyDown={(e) => e.key === 'Enter' && flash(`${card.title} — 참가 신청 데모`)}
+                onClick={() => void registerEvent(card.id, card.title, 'pending')}
+                onKeyDown={(e) => e.key === 'Enter' && void registerEvent(card.id, card.title, 'pending')}
               >
                 {card.tag ? (
-                  <div className="absolute -top-2 -left-2 bg-primary text-white text-[10px] font-label-bold px-3 py-1 rounded-br-lg z-10">
+                  <div className="absolute top-0 left-0 bg-[#ffdd2d] text-slate-950 text-[10px] font-label-bold px-3 py-1 rounded-br-lg z-10 shadow-sm">
                     {card.tag}
                   </div>
                 ) : null}
@@ -528,10 +578,10 @@ export default function EventsPage() {
                       }
                       onClick={(e) => {
                         e.stopPropagation()
-                        flash(`${card.title} 참가!`)
+                        void registerEvent(card.id, card.title, 'pending')
                       }}
                     >
-                      참가하기
+                      참가 등록
                     </button>
                   </div>
                 </div>
@@ -550,13 +600,13 @@ export default function EventsPage() {
             <button
               type="button"
               className="font-label-bold text-primary hover:underline"
-              onClick={() => flash('전체 이벤트 목록 (데모)')}
+              onClick={() => setShowAllUpcoming((v) => !v)}
             >
-              전체보기
+              {showAllUpcoming ? '접기' : '전체보기'}
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-            {UPCOMING_EVENTS.map((ev) => (
+            {visibleUpcomingEvents.map((ev) => (
               <article
                 key={ev.id}
                 className="bg-white rounded-lg border-8 border-white p-0 overflow-hidden toy-card hover:scale-[1.02] transition-transform"
@@ -585,7 +635,7 @@ export default function EventsPage() {
                     <button
                       type="button"
                       className={'font-label-bold px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
-                      onClick={() => flash(`${ev.title} — ${ev.cta}`)}
+                      onClick={() => void registerEvent(ev.id, ev.title, ev.actionType)}
                     >
                       {ev.cta}
                     </button>
@@ -611,3 +661,4 @@ export default function EventsPage() {
     </div>
   )
 }
+

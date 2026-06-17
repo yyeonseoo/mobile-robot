@@ -734,10 +734,6 @@ body.temi-events .ev-layout-shell {
   padding-right: 6px;
 }
 
-.ev-upcoming-list:not(.is-expanded) .ev-upcoming-item:nth-child(n + 3) {
-  display: none;
-}
-
 .ev-upcoming-list::-webkit-scrollbar {
   width: 10px;
 }

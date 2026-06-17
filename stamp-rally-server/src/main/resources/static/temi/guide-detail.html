@@ -22,14 +22,11 @@
           <p class="muted">불러오는 중…</p>
         </section>
         <aside class="qr-panel" style="flex-direction: column; align-items: flex-start">
-          <strong style="font-size: 1.2rem">폰으로 경로·상세 넘기기</strong>
+          <strong style="font-size: 1.2rem">스탬프 랠리 QR</strong>
           <div class="qr-host" style="margin-top: 12px"><div id="qrSync"></div></div>
           <p class="hint" style="margin-top: 16px">
-            모바일에서 같은 전시 상세 페이지가 열립니다. 길안내는 폰에서 이어서 확인하세요.
+            휴대폰 기본 카메라로 QR을 스캔하면 해당 구역의 스탬프 랠리 페이지가 열리고 자동 적립을 시도합니다.
           </p>
-          <button type="button" class="voice-btn" style="min-width: 100%; margin-top: 20px" id="btnVoice">
-            음성 안내 시작 (데모)
-          </button>
         </aside>
       </div>
     </div>
@@ -40,6 +37,24 @@
       function qs(name) {
         var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
         return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+      }
+      function getStampClaim(ex) {
+        var text = [
+          ex && ex.id,
+          ex && ex.zone,
+          ex && ex.name,
+          ex && ex.locationText
+        ]
+          .join(" ")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+
+        if (/rally-1|stamp1|zonea|a존|a구역|1구역|\ba\b/.test(text)) return "RALLY-1";
+        if (/rally-2|stamp2|zoneb|b존|b구역|2구역|\bb\b/.test(text)) return "RALLY-2";
+        if (/rally-3|stamp3|zonec|c존|c구역|3구역|\bc\b/.test(text)) return "RALLY-3";
+        if (/rally-4|stamp4|zoned|d존|d구역|4구역|\bd\b/.test(text)) return "RALLY-4";
+
+        return "RALLY-1";
       }
       var id = qs("id");
       fetch(origin() + "/api/exhibitions/" + encodeURIComponent(id))
@@ -73,9 +88,11 @@
           document.title = ex.name + " — 상세";
           var host = document.getElementById("qrSync");
           host.innerHTML = "";
+          var claim = getStampClaim(ex);
+          var stampUrl = origin() + "/mobile/app/rally?claim=" + encodeURIComponent(claim);
           if (window.QRCode) {
             new QRCode(host, {
-              text: origin() + "/mobile/app/map?id=" + ex.id,
+              text: stampUrl,
               width: 220,
               height: 220,
             });
@@ -85,14 +102,6 @@
           document.getElementById("detailMain").innerHTML =
             "<p>전시 정보를 찾을 수 없습니다.</p>";
         });
-      document.getElementById("btnVoice").onclick = function () {
-        if (!window.speechSynthesis) return;
-        var el = document.getElementById("detailMain");
-        var u = new SpeechSynthesisUtterance(el.innerText || "");
-        u.lang = "ko-KR";
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
-      };
     </script>
   </body>
 </html>

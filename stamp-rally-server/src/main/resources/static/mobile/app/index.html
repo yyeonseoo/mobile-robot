@@ -15,10 +15,619 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/mobile/app/assets/index-CfRfLCOS.js"></script>
-    <link rel="stylesheet" crossorigin href="/mobile/app/assets/index-Bz67xedK.css">
+    <script>
+/*
+  Stamp Rally Progress Fix Bridge
+  - /mobile/app/rally?claim=RALLY-1~4 로 들어오면 React API 성공 여부와 상관없이 즉시 진행도를 반영한다.
+  - /api/rally/status, /api/my-stamps, /api/spots, /api/stamps/claim 응답을 localStorage 기준으로 동기화한다.
+*/
+(function () {
+  if (window.__temiStampProgressFixBridge) return;
+  window.__temiStampProgressFixBridge = true;
+
+  var CLAIMS_KEY = "temi:stampClaims";
+  var STATUS_KEY = "temi:stampStatus";
+  var TOKEN_KEY = "stampRallyVisitorToken";
+  var NICK_KEY = "stampRallyNickname";
+  var LAST_EMIT_KEY = "temi:lastStampDirectEmit";
+
+  var SPOTS = [
+    { code: "RALLY-1", name: "A 구역" },
+    { code: "RALLY-2", name: "B 구역" },
+    { code: "RALLY-3", name: "C 구역" },
+    { code: "RALLY-4", name: "D 구역" }
+  ];
+
+  function now() {
+    return new Date().toISOString();
+  }
+
+  function normalizeCode(raw) {
+    var value = String(raw || "").trim();
+    if (!value) return "";
+
+    try {
+      var parsed = new URL(value.indexOf("://") >= 0 ? value : window.location.origin + value);
+      var claim = parsed.searchParams.get("claim");
+      if (claim && claim.trim()) value = claim.trim();
+    } catch (e) {}
+
+    var compact = value.replace(/\s+/g, "").toUpperCase();
+
+    if (compact === "RALLY-1" || compact === "RALLY1" || compact === "STAMP1" || compact === "A" || compact === "A구역" || compact === "1구역") return "RALLY-1";
+    if (compact === "RALLY-2" || compact === "RALLY2" || compact === "STAMP2" || compact === "B" || compact === "B구역" || compact === "2구역") return "RALLY-2";
+    if (compact === "RALLY-3" || compact === "RALLY3" || compact === "STAMP3" || compact === "C" || compact === "C구역" || compact === "3구역") return "RALLY-3";
+    if (compact === "RALLY-4" || compact === "RALLY4" || compact === "STAMP4" || compact === "D" || compact === "D구역" || compact === "4구역") return "RALLY-4";
+
+    return compact;
+  }
+
+  function ensureSession() {
+    try {
+      if (!localStorage.getItem(TOKEN_KEY)) {
+        localStorage.setItem(TOKEN_KEY, "local-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+      }
+      if (!localStorage.getItem(NICK_KEY)) {
+        localStorage.setItem(NICK_KEY, "방문자");
+      }
+    } catch (e) {}
+  }
+
+  function readClaims() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(CLAIMS_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function writeClaims(claims) {
+    try {
+      localStorage.setItem(CLAIMS_KEY, JSON.stringify(claims || []));
+      localStorage.setItem(STATUS_KEY, JSON.stringify(statusOf(claims || [])));
+    } catch (e) {}
+  }
+
+  function statusOf(claims) {
+    claims = claims || readClaims();
+    return {
+      updatedAt: now(),
+      total: 4,
+      totalSpots: 4,
+      collectedCount: claims.length,
+      completed: claims.length >= 4,
+      claims: claims,
+      last: claims[claims.length - 1] || null
+    };
+  }
+
+  function claim(code) {
+    code = normalizeCode(code);
+    if (!code) return readClaims();
+
+    ensureSession();
+
+    var claims = readClaims();
+    var exists = claims.some(function (x) {
+      return normalizeCode(x.code || x.spotCode || x.qrValue) === code;
+    });
+
+    if (!exists) {
+      var spot = SPOTS.find(function (s) { return s.code === code; }) || { code: code, name: code };
+      claims.push({
+        code: code,
+        spotCode: code,
+        qrValue: code,
+        name: spot.name,
+        claimedAt: now()
+      });
+    }
+
+    claims.sort(function (a, b) {
+      var ai = SPOTS.findIndex(function (s) { return s.code === normalizeCode(a.code || a.spotCode || a.qrValue); });
+      var bi = SPOTS.findIndex(function (s) { return s.code === normalizeCode(b.code || b.spotCode || b.qrValue); });
+      return ai - bi;
+    });
+
+    writeClaims(claims);
+    return claims;
+  }
+
+  function response(data) {
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  function parseBody(init) {
+    try {
+      if (!init || !init.body) return {};
+      if (typeof init.body === "string") return JSON.parse(init.body);
+      if (init.body instanceof FormData) {
+        return {
+          qrValue: init.body.get("qrValue") || init.body.get("claim") || init.body.get("code") || init.body.get("spotCode")
+        };
+      }
+    } catch (e) {}
+    return {};
+  }
+
+  function remainingSpots() {
+    var owned = {};
+    readClaims().forEach(function (x) {
+      owned[normalizeCode(x.code || x.spotCode || x.qrValue)] = true;
+    });
+    return SPOTS.filter(function (s) { return !owned[s.code]; });
+  }
+
+  function emitSocketUpdate(code, claims) {
+    var st = statusOf(claims);
+    var payload = {
+      type: "stamp_update",
+      source: "mobile-rally-direct-progress-fix",
+      code: code,
+      qrValue: code,
+      result: st,
+      status: st,
+      href: window.location.href,
+      path: window.location.pathname,
+      search: window.location.search,
+      updatedAt: now()
+    };
+
+    try {
+      window.dispatchEvent(new CustomEvent("app:stamp_update", { detail: payload }));
+      localStorage.setItem(LAST_EMIT_KEY, JSON.stringify(payload));
+    } catch (e) {}
+
+    function send() {
+      try {
+        if (window.TemiAppSocket && window.TemiAppSocket.emit) {
+          window.TemiAppSocket.emit("app:stamp_update", payload, function (ack) {
+            console.log("[Stamp Progress Fix] app:stamp_update ack", ack);
+          });
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    if (send()) return;
+
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries += 1;
+      if (send() || tries >= 20) clearInterval(timer);
+    }, 300);
+  }
+
+  function showToast(code, claims) {
+    try {
+      var box = document.createElement("div");
+      box.style.position = "fixed";
+      box.style.left = "50%";
+      box.style.bottom = "92px";
+      box.style.transform = "translateX(-50%)";
+      box.style.zIndex = "99999";
+      box.style.padding = "14px 18px";
+      box.style.borderRadius = "18px";
+      box.style.background = "#111827";
+      box.style.color = "#fff";
+      box.style.boxShadow = "0 12px 28px rgba(0,0,0,.25)";
+      box.style.fontWeight = "800";
+      box.style.textAlign = "center";
+      box.innerHTML =
+        '<div style="font-size:16px;">스탬프 적립 완료</div>' +
+        '<div style="font-size:15px;margin-top:4px;">' + code + '</div>' +
+        '<div style="font-size:13px;margin-top:6px;">현재 ' + claims.length + ' / 4 획득</div>';
+      document.body.appendChild(box);
+      setTimeout(function () {
+        if (box && box.parentNode) box.parentNode.removeChild(box);
+      }, 3500);
+    } catch (e) {}
+  }
+
+  function runDirectClaim() {
+    try {
+      var code = normalizeCode(new URLSearchParams(window.location.search).get("claim") || "");
+      if (!code) return;
+      var claims = claim(code);
+      emitSocketUpdate(code, claims);
+      if (document.body) showToast(code, claims);
+      else window.addEventListener("DOMContentLoaded", function () { showToast(code, claims); }, { once: true });
+      console.log("[Stamp Progress Fix] direct claim", code, claims);
+    } catch (e) {
+      console.warn("[Stamp Progress Fix] direct claim error", e);
+    }
+  }
+
+  runDirectClaim();
+
+  if (window.fetch && !window.fetch.__temiStampProgressFixBridge) {
+    var realFetch = window.fetch.bind(window);
+
+    window.fetch = function (input, init) {
+      var url = "";
+      try {
+        url = typeof input === "string" ? input : input && input.url ? input.url : "";
+      } catch (e) {}
+
+      var method = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
+      var path = url;
+
+      try {
+        path = new URL(url, window.location.origin).pathname;
+      } catch (e) {}
+
+      if (path === "/api/rally/status") {
+        ensureSession();
+        return Promise.resolve(response(statusOf()));
+      }
+
+      if (path === "/api/my-stamps") {
+        ensureSession();
+        return Promise.resolve(response(readClaims()));
+      }
+
+      if (path === "/api/spots") {
+        ensureSession();
+        return Promise.resolve(response(remainingSpots()));
+      }
+
+      if (path === "/api/stamps/claim" && method === "POST") {
+        var body = parseBody(init);
+        var code = normalizeCode(body.qrValue || body.claim || body.code || body.spotCode);
+        var claims = claim(code);
+        emitSocketUpdate(code, claims);
+        return Promise.resolve(response({
+          ok: true,
+          code: code,
+          spotCode: code,
+          collectedCount: claims.length,
+          totalSpots: 4,
+          rallyComplete: claims.length >= 4,
+          status: statusOf(claims)
+        }));
+      }
+
+      return realFetch(input, init);
+    };
+
+    window.fetch.__temiStampProgressFixBridge = true;
+  }
+})();
+</script>
+    <script>
+/*
+  Mobile PocketMap Yellow-Route Marker Bridge
+  - 기존 월드 지도 사진은 그대로 사용한다.
+  - 네 칸 분할이 아니라, 노란색 길/라인 위에 작은 A/B/C/D 지점을 찍는다.
+  - 기존 빨간 GPS 표시는 숨기고, Temi 마커가 A/B/C/D 지점으로 이동한다.
+*/
+(function () {
+  if (window.__temiPocketMapYellowRouteBridge) return;
+  window.__temiPocketMapYellowRouteBridge = true;
+
+  var POS_KEY = "temi:lastPosition";
+  var LOC_KEY = "temi:lastLocationId";
+
+  /*
+    기존 포켓맵 사진의 노란색 길 기준 좌표(%)
+    left: 왼쪽→오른쪽
+    top : 위→아래
+
+    실제 사진에서 조금 어긋나면 이 숫자만 조정하면 됨.
+  */
+  var POSITIONS = {
+    start: { left: 13, top: 82, label: "START" },
+    homebase: { left: 13, top: 82, label: "START" },
+    home: { left: 13, top: 82, label: "START" },
+
+    a: { left: 27, top: 74, label: "A" },
+    b: { left: 43, top: 61, label: "B" },
+    c: { left: 60, top: 42, label: "C" },
+    d: { left: 80, top: 23, label: "D" },
+
+    follow: { left: 50, top: 52, label: "FOLLOW" },
+    ready: { left: 13, top: 82, label: "READY" },
+    app_start: { left: 13, top: 82, label: "START" }
+  };
+
+  function clamp(n, min, max) {
+    n = Number(n);
+    if (!isFinite(n)) return min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function normalizeLocation(raw) {
+    var value = String(raw || "").trim();
+    var key = value.replace(/\s+/g, "").replace(/_/g, "").toLowerCase();
+
+    if (!key) return "";
+    if (key === "homebase" || key === "home" || key === "start" || key === "홈베이스" || key === "홈" || key === "시작지점") return "start";
+    if (key === "a" || key === "zonea" || key === "a구역" || key === "rally-1" || key === "rally1" || key === "stamp1" || key === "1구역") return "a";
+    if (key === "b" || key === "zoneb" || key === "b구역" || key === "rally-2" || key === "rally2" || key === "stamp2" || key === "2구역") return "b";
+    if (key === "c" || key === "zonec" || key === "c구역" || key === "rally-3" || key === "rally3" || key === "stamp3" || key === "3구역") return "c";
+    if (key === "d" || key === "zoned" || key === "d구역" || key === "rally-4" || key === "rally4" || key === "stamp4" || key === "4구역") return "d";
+    if (key.indexOf("follow") >= 0 || key.indexOf("따라") >= 0) return "follow";
+    return key;
+  }
+
+  function extractLocation(payload) {
+    payload = payload || {};
+    return normalizeLocation(
+      payload.locationId ||
+      payload.location ||
+      payload.target ||
+      payload.zone ||
+      payload.name ||
+      payload.label ||
+      payload.current ||
+      payload.spotCode ||
+      payload.code ||
+      ""
+    );
+  }
+
+  function isMapPage() {
+    return location.pathname.indexOf("/mobile/app/map") >= 0 ||
+      location.hash.indexOf("/map") >= 0 ||
+      location.pathname.endsWith("/map");
+  }
+
+  function findMapCard() {
+    var img = document.querySelector('img[alt="월드 지도"]');
+    if (!img) return null;
+
+    var node = img.parentElement;
+    while (node && node !== document.body) {
+      var cls = String(node.className || "");
+      if (cls.indexOf("relative") >= 0 && cls.indexOf("overflow-hidden") >= 0) return node;
+      node = node.parentElement;
+    }
+    return img.parentElement;
+  }
+
+  function removeOldGpsMarkers(card) {
+    if (!card) return;
+
+    var spans = card.querySelectorAll("span.material-symbols-outlined, span");
+    for (var i = 0; i < spans.length; i++) {
+      var txt = String(spans[i].textContent || "").trim();
+      if (txt === "person_pin_circle" || txt === "gps_fixed" || txt === "my_location" || txt === "location_on") {
+        var node = spans[i];
+        while (node && node !== card) {
+          var cls = String(node.className || "");
+          if (cls.indexOf("absolute") >= 0) {
+            if (node.id !== "temiMapMovingMarker") node.classList.add("temi-map-old-gps-hidden");
+            break;
+          }
+          node = node.parentElement;
+        }
+      }
+    }
+  }
+
+  function ensureRoutePoints(card) {
+    if (!card || card.querySelector(".temi-map-route-points")) return;
+
+    var wrap = document.createElement("div");
+    wrap.className = "temi-map-route-points";
+
+    ["a", "b", "c", "d"].forEach(function (key) {
+      var p = POSITIONS[key];
+      var point = document.createElement("div");
+      point.className = "temi-map-route-point route-" + key;
+      point.setAttribute("data-zone", key);
+      point.style.left = clamp(p.left, 6, 94) + "%";
+      point.style.top = clamp(p.top, 8, 92) + "%";
+      point.innerHTML = '<span>' + p.label + '</span>';
+      wrap.appendChild(point);
+    });
+
+    card.appendChild(wrap);
+  }
+
+  function ensureMarker(card) {
+    var marker = document.getElementById("temiMapMovingMarker");
+    if (marker && marker.parentNode === card) return marker;
+
+    marker = document.createElement("div");
+    marker.id = "temiMapMovingMarker";
+    marker.className = "temi-map-moving-marker";
+    marker.innerHTML =
+      '<div class="temi-map-moving-marker-inner">' +
+        '<span class="material-symbols-outlined">smart_toy</span>' +
+      '</div>' +
+      '<div class="temi-map-moving-marker-shadow"></div>';
+    card.appendChild(marker);
+    return marker;
+  }
+
+  function ensureCaption(card) {
+    var caption = document.getElementById("temiMapMovingCaption");
+    if (caption) return caption;
+
+    caption = document.createElement("div");
+    caption.id = "temiMapMovingCaption";
+    caption.className = "temi-map-moving-caption";
+    card.appendChild(caption);
+    return caption;
+  }
+
+  function hideOldPanel() {
+    var old = document.getElementById("temiMapLivePanel");
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+  }
+
+  function labelOf(loc) {
+    return (POSITIONS[loc] && POSITIONS[loc].label) || String(loc || "UNKNOWN").toUpperCase();
+  }
+
+  function stateText(state) {
+    var s = String(state || "").toLowerCase();
+    if (s === "moving") return "이동 중";
+    if (s === "arrived" || s === "complete") return "도착";
+    if (s === "idle" || s === "ready") return "대기";
+    if (s === "error") return "오류";
+    if (!s) return "위치 수신 대기";
+    return state;
+  }
+
+  function applyPosition(loc, state, raw) {
+    loc = normalizeLocation(loc);
+    if (!loc) return;
+
+    try {
+      localStorage.setItem(LOC_KEY, loc);
+      localStorage.setItem(POS_KEY, JSON.stringify({
+        locationId: loc,
+        state: state || "",
+        raw: raw || null,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch (e) {}
+
+    if (!isMapPage()) return;
+
+    hideOldPanel();
+
+    var card = findMapCard();
+    if (!card) return;
+
+    removeOldGpsMarkers(card);
+    ensureRoutePoints(card);
+
+    var marker = ensureMarker(card);
+    var caption = ensureCaption(card);
+    var pos = POSITIONS[loc] || POSITIONS.start;
+
+    var left = clamp(pos.left, 6, 94);
+    var top = clamp(pos.top, 8, 92);
+
+    marker.style.left = left + "%";
+    marker.style.top = top + "%";
+    marker.style.right = "auto";
+    marker.style.bottom = "auto";
+    marker.style.transform = "translate(-50%, -50%)";
+
+    card.setAttribute("data-temi-location", loc);
+
+    card.querySelectorAll(".temi-map-route-point").forEach(function (el) {
+      el.classList.toggle("is-active", el.getAttribute("data-zone") === loc);
+    });
+
+    caption.textContent = "Temi 위치: " + labelOf(loc) + " · " + stateText(state);
+  }
+
+  function restoreStoredPosition() {
+    var loc = "";
+    var state = "";
+    try {
+      var saved = JSON.parse(localStorage.getItem(POS_KEY) || "{}");
+      loc = saved.locationId || localStorage.getItem(LOC_KEY) || "";
+      state = saved.state || "";
+    } catch (e) {
+      try { loc = localStorage.getItem(LOC_KEY) || ""; } catch (_) {}
+    }
+
+    if (isMapPage()) {
+      applyPosition(loc || "start", state || "ready");
+    } else {
+      hideOldPanel();
+    }
+  }
+
+  function loadSocketIo() {
+    if (window.io) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var src = location.protocol + "//" + location.hostname + ":3000/socket.io/socket.io.js";
+      var s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function () { resolve(); };
+      s.onerror = function () { resolve(); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function connectSocket() {
+    loadSocketIo().then(function () {
+      if (!window.io) return;
+
+      var socket = window.io(location.protocol + "//" + location.hostname + ":3000", {
+        query: { room: "app", source: "mobile-map-yellow-route-marker" },
+        transports: ["websocket", "polling"],
+        reconnection: true
+      });
+
+      function onPosition(payload) {
+        payload = payload || {};
+        var loc = extractLocation(payload);
+        var state = payload.state || payload.navState || payload.status || payload.phase || "";
+        applyPosition(loc, state, payload);
+      }
+
+      [
+        "app:temi_position",
+        "temi:position",
+        "temi_position",
+        "position",
+        "app:position",
+        "app:nav",
+        "temi:nav"
+      ].forEach(function (eventName) {
+        socket.on(eventName, onPosition);
+      });
+
+      socket.on("connect", restoreStoredPosition);
+    });
+  }
+
+  function boot() {
+    restoreStoredPosition();
+    connectSocket();
+
+    var lastHref = location.href;
+    setInterval(function () {
+      if (lastHref !== location.href) {
+        lastHref = location.href;
+        setTimeout(restoreStoredPosition, 150);
+      } else if (isMapPage()) {
+        hideOldPanel();
+        var card = findMapCard();
+        if (card) {
+          removeOldGpsMarkers(card);
+          ensureRoutePoints(card);
+        }
+        if (!document.getElementById("temiMapMovingMarker")) restoreStoredPosition();
+      } else {
+        hideOldPanel();
+      }
+    }, 450);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+
+  window.addEventListener("storage", function (ev) {
+    if (ev.key === POS_KEY || ev.key === LOC_KEY) restoreStoredPosition();
+  });
+})();
+</script>
+    <script type="module" crossorigin src="/mobile/app/assets/index-B2OLAibX.js"></script>
+    <link rel="stylesheet" crossorigin href="/mobile/app/assets/index-5T-lDH1x.css">
+      <style>
+.stamp-rally-scan-guide,.stamp-rally-camera-guide-text,.stamp-rally-camera-steps,.stamp-rally-camera-steps *{writing-mode:horizontal-tb!important;text-orientation:mixed!important;word-break:keep-all!important;overflow-wrap:normal!important}
+</style>
   </head>
   <body>
     <div id="root"></div>
+
   </body>
 </html>

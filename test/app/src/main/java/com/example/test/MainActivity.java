@@ -82,7 +82,8 @@ public class MainActivity extends AppCompatActivity implements
 
     // 서버 노트북에서 ipconfig 했을 때 나오는 Wi-Fi IPv4 주소.
     // Temi IP가 아니라 서버 노트북 IP임.
-    private static final String SERVER_HOST = "172.100.6.27";
+    private static final String SERVER_HOST = "172.100.6.92";
+
 
     // Temi WebView가 받아올 화면 UI 서버
     private static final String TEMI_UI_URL = "http://" + SERVER_HOST + ":8080/temi/index.html";
@@ -299,16 +300,8 @@ public class MainActivity extends AppCompatActivity implements
 
         String compact = target.replace(" ", "").replace("_", "").toLowerCase(Locale.ROOT);
 
-        if ("homebase".equals(compact)) {
-            if (locations.contains("homebase")) {
-                return "homebase";
-            }
-            if (locations.contains("home base")) {
-                return "home base";
-            }
-            if (locations.contains("home_base")) {
-                return "home_base";
-            }
+        if ("start".equals(compact) && locations.contains("start")) {
+            return "start";
         }
 
         for (String saved : locations) {
@@ -378,8 +371,15 @@ public class MainActivity extends AppCompatActivity implements
 
             case "home":
             case "homebase":
+            case "homebase복귀":
+            case "homebasemove":
+            case "homebasereturn":
+            case "start":
             case "홈":
             case "홈복귀":
+            case "홈베이스":
+            case "홈베이스복귀":
+            case "홈베이스이동":
             case "메인홀":
             case "main":
             case "mainhall":
@@ -388,7 +388,7 @@ public class MainActivity extends AppCompatActivity implements
             case "temi":
             case "테미":
             case "테미부르기":
-                return "homebase";
+                return "start";
 
             default:
                 return key;
@@ -427,7 +427,7 @@ public class MainActivity extends AppCompatActivity implements
                 return new float[]{1.0f, 2.0f, 0.0f};
             case "d":
                 return new float[]{2.0f, 2.0f, 0.0f};
-            case "homebase":
+            case "start":
                 return new float[]{0.0f, 0.0f, 0.0f};
             case "follow":
                 return new float[]{0.5f, 0.5f, 0.0f};

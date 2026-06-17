@@ -107,10 +107,11 @@
 
         <section class="gd-map-section" id="guideMap" aria-label="전체 지도">
           <div class="gd-map-visual">
+            <img id="gdMapImage" class="gd-map-image" alt="" />
             <div class="gd-map-pin">
               <div class="gd-map-pin-inner">
                 <span class="material-symbols-outlined">location_pin</span>
-                <span id="gdCurrentLoc">현재 위치: 중앙 인포메이션</span>
+                <span id="gdCurrentLoc">어디로 가볼까요?</span>
               </div>
             </div>
           </div>
@@ -184,6 +185,40 @@
           return "gd-card-thumb--default";
         }
 
+        function exhibitionImageUrl(ex) {
+          var explicit = String((ex && ex.imageUrl) || "").trim();
+          if (explicit) return explicit;
+
+          return zoneImageUrl(ex && ex.zone);
+        }
+
+        function zoneImageUrl(zoneName) {
+          var zone = String(zoneName || "").trim();
+          if (zone.indexOf("A") === 0) return "images/city-lights-night-photo-exhibition.png";
+          if (zone.indexOf("B") === 0) return "images/future-mobility-experience-hall.png";
+          if (zone.indexOf("C") === 0) return "images/children-science-playground.png";
+          if (zone.indexOf("D") === 0) return "images/special-digital-archive.png";
+
+          return "";
+        }
+
+        function setCurrentZone(zoneName) {
+          var zone = String(zoneName || "").trim();
+          var currentLoc = document.getElementById("gdCurrentLoc");
+          var mapImage = document.getElementById("gdMapImage");
+          if (currentLoc) currentLoc.textContent = zone ? "\uD604\uC7AC \uC704\uCE58: " + zone : "\uC5B4\uB514\uB85C \uAC00\uBCFC\uAE4C\uC694?";
+          if (!mapImage) return;
+
+          var img = zoneImageUrl(zone);
+          if (img) {
+            mapImage.src = img;
+            mapImage.classList.add("is-visible");
+          } else {
+            mapImage.removeAttribute("src");
+            mapImage.classList.remove("is-visible");
+          }
+        }
+
         function sortedList() {
           var list = exhibitions.slice();
           if (sortMode === "near") {
@@ -209,6 +244,10 @@
           list.forEach(function (ex) {
             var card = document.createElement("article");
             card.className = "gd-card";
+            var imageUrl = exhibitionImageUrl(ex);
+            var imageHtml = imageUrl
+              ? '<img class="gd-card-thumb-img" src="' + escapeAttr(imageUrl) + '" alt="" />'
+              : "";
             var distLabel =
               sortMode === "near" && ex.demoDistance
                 ? ' <span class="gd-dist">(약 ' + ex.demoDistance + "m)</span>"
@@ -216,7 +255,9 @@
             card.innerHTML =
               '<div class="gd-card-thumb ' +
               zoneThumbClass(ex.zone) +
-              '"><span class="gd-zone-badge">' +
+              '">' +
+              imageHtml +
+              '<span class="gd-zone-badge">' +
               escapeHtml(ex.zone || "구역") +
               '</span></div><div class="gd-card-body"><h2>' +
               escapeHtml(ex.name) +
@@ -279,6 +320,12 @@
           }
           document.getElementById("navStatusText").textContent =
             "데모 모드: Android Bridge 연결 시 실제로 이동합니다.";
+          setTimeout(function () {
+            setCurrentZone(zone);
+            document.getElementById("navStatusText").textContent = "도착했습니다!";
+            document.getElementById("navProgress").hidden = true;
+            setTimeout(closeNavOverlay, 1200);
+          }, 1400);
         }
 
         function cancelNav() {
@@ -371,6 +418,9 @@
 
         window.addEventListener("temi:nav", function (ev) {
           var d = (ev && ev.detail) || {};
+          if (d.state === "arrived") {
+            setCurrentZone(d.locationId || activeNavZone);
+          }
           if (!document.getElementById("navOverlay").classList.contains("is-open")) return;
           if (d.state === "arrived") {
             document.getElementById("navStatusText").textContent = "도착했습니다!";
