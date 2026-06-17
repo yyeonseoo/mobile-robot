@@ -117,7 +117,9 @@ export default function StampRallyPage() {
         <section className="text-center space-y-xs pt-base">
           <h2 className="font-display-lg text-display-lg text-primary">모두 모아보자!</h2>
           <p className="font-body-md text-body-md text-on-surface-variant px-md">
-            포켓몬 센터를 방문하고 디지털 스탬프 북을 채워보세요!
+            포켓몬 센터를 방문하고
+            <br />
+            디지털 스탬프 북을 채워보세요!
           </p>
         </section>
 
@@ -140,9 +142,11 @@ export default function StampRallyPage() {
               QR 스캔하기
             </span>
           </button>
-          <p className="max-w-sm text-center text-on-surface-variant text-sm leading-relaxed px-md">
+          <p className="w-full text-center text-on-surface-variant text-sm leading-relaxed px-md [word-break:keep-all] text-pretty">
             모바일 웹 카메라 대신 <strong className="text-on-surface">휴대폰 기본 카메라 앱</strong>으로
-            전시장 QR을 스캔해 주세요. 스캔 후 이 앱으로 돌아오면 스탬프가 적립됩니다.
+            전시장 QR을 스캔해 주세요.
+            <br />
+            스캔 후 이 앱으로 돌아오면 스탬프가 적립됩니다.
           </p>
         </section>
 

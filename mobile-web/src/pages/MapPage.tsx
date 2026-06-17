@@ -99,7 +99,9 @@ export default function MapPage() {
         <div className="mb-lg text-center">
           <h2 className="font-display-lg text-display-lg text-primary mb-xs">나의 길 찾기</h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
-            모험을 떠나보세요, 트레이너님! 새로운 세상이 기다리고 있습니다.
+            모험을 떠나보세요, 트레이너님!
+            <br />
+            새로운 세상이 기다리고 있습니다.
           </p>
         </div>
 

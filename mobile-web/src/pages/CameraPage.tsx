@@ -60,6 +60,7 @@ export default function CameraPage() {
           <h2 className="font-display-lg text-display-lg text-primary leading-tight">인생네컷 찍기</h2>
           <p className="text-on-surface-variant text-sm leading-relaxed">
             휴대폰 브라우저 카메라 대신 <strong className="text-on-surface">전시장 테미</strong>에서 촬영합니다.
+            <br />
             촬영 후 결과는 이 앱으로 바로 전송됩니다.
           </p>
         </section>
@@ -80,7 +81,7 @@ export default function CameraPage() {
             type="button"
             disabled={status === 'starting' || status === 'waiting'}
             onClick={() => void startTemiShoot()}
-            className="w-full bg-secondary-container text-white font-label-bold py-4 rounded-full neomorph-button disabled:opacity-60 text-lg"
+            className="w-full bg-secondary-container text-white font-nanum-action py-4 rounded-full neomorph-button disabled:opacity-60 text-lg"
           >
             {status === 'starting'
               ? '연결 중…'

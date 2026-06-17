@@ -198,7 +198,7 @@ export default function DailyChallengePanel({ topic, onToast }: Props) {
               <div className="w-12 h-12 bg-white rounded-full mx-auto flex items-center justify-center border-2 border-current/30">
                 <span className="material-symbols-outlined">{ch.icon}</span>
               </div>
-              <p className="font-label-bold">{ch.label}</p>
+              <p className="font-nanum-action">{ch.label}</p>
             </button>
           ))}
         </div>
