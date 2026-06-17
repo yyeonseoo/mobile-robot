@@ -140,7 +140,7 @@ export default function HomePage() {
                 진행 중인 이벤트
               </span>
             </div>
-            <h2 className="font-display-lg text-display-lg text-on-primary-fixed leading-tight">
+            <h2 className="font-pinkfong-hero text-on-primary-fixed px-2">
               피카츄가 기다리고 있어요!
             </h2>
             <div className="w-full aspect-video rounded-xl overflow-hidden mt-sm">
@@ -150,7 +150,7 @@ export default function HomePage() {
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9p93EzStol5b-vTteM059dYV_2FACrpNd1hZ2aS_tf4Kq-Rn6g-mtUvwbzj7on2FJsdjSlsfimQ56MRCj6cDbDBDcUXW1q0xuXh2-LAq_o7guLi9-sMAmzkqzMc_AxQ8gg4bmahZfN3NHtlJOlx5P2SEGLosd6lwdNsFevMNQiIXRWLuVFu11pwmF1BRndY23QE6WwaAxtw3oDKqTpJq4VPrlrKyIz_ol0Wv_rIG3ubkKt3kdVx5o3RzN3qwc5G9rVs68EHsYshc"
               />
             </div>
-            <p className="font-body-lg text-on-primary-fixed-variant mt-sm">
+            <p className="font-body-lg text-[clamp(0.75rem,3.3vw,0.875rem)] text-on-primary-fixed-variant mt-sm text-center w-full whitespace-nowrap [word-break:keep-all]">
               중앙 광장으로 가서 특별한 인사를 나눠보세요!
             </p>
           </div>
@@ -181,7 +181,7 @@ export default function HomePage() {
                     {tab.icon}
                   </span>
                 </div>
-                <span className="font-headline-md text-headline-md text-on-surface">{tab.label}</span>
+                <span className="font-pinkfong-menu text-on-surface">{tab.label}</span>
               </Link>
             )
           })}

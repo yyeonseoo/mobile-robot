@@ -1,4 +1,4 @@
-﻿import { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import AppHeader, { APP_HEADER_MAIN_PT } from '../components/AppHeader'
@@ -7,9 +7,6 @@ import { getVisitorToken } from '../lib/storage'
 import { recordVisitorEventAction } from '../lib/visitorApi'
 
 const FESTIVAL_HERO_IMG = `${import.meta.env.BASE_URL}events/pokemon-festival-2026.png`
-
-const PIKACHU_IMG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuCmeFMffqzWnH5Kb3OyRpQ_zrSL--lR_TMrKMXRfKqEhyZUlkV9hutiTwBoHqRe5TarDZTgTcjxqiEUK7-NCiWp9EiAr0B7Mavh-pJrTS-kcvjdV3YeCeCF9pYWWSzLNGd1zW4V9irloj9WUm16tOtTnpD2dZDqo7M4wxEkfNFZBfxqsmLV1fI58IHWZ1g7Y50Iz4Ukc8Di662F2Zt8IxkaTwgAEV2nK54KxQeIbRi2nNPmLGFBUiebxoCdI3SUIUzYnM8J1wNdo4Y'
 
 const MASCOT_MEETING_IMG = `${import.meta.env.BASE_URL}events/mascot-meeting.png`
 
@@ -74,7 +71,7 @@ const RECOMMEND_PRESETS = [
   {
     id: 'eevee',
     title: '이브이 프렌즈 가든 파티',
-    tag: 'BEST MATCH',
+    tag: null,
     reason: '이브이를 좋아하시니까 추천드려요!',
     time: '오늘 15시 시작',
     image: EEVEE_IMG,
@@ -287,31 +284,29 @@ export default function EventsPage() {
 
       <main className={`max-w-4xl mx-auto px-margin ${APP_HEADER_MAIN_PT} space-y-8`}>
         {/* 히어로 — 2026 포켓몬 페스티벌 */}
-        <section className="relative rounded-lg overflow-hidden border-4 border-tertiary shadow-xl">
+        <section className="rounded-lg overflow-hidden border-4 border-tertiary shadow-xl bg-white">
           <img
             src={FESTIVAL_HERO_IMG}
             alt="2026 Pokemon Festival Pocket Adventure — 피카츄, 이브이, 꼬부기"
-            className="w-full aspect-[16/9] object-cover object-center"
+            className="w-full aspect-[16/9] object-cover object-center block"
           />
-          <div
-            className="absolute inset-0 bg-gradient-to-t from-slate-900/92 via-slate-900/45 to-transparent"
-            aria-hidden="true"
-          />
-          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 md:p-10">
-            <div className="w-full max-w-[min(100%,40rem)] space-y-3 text-white text-left">
-              <span className="inline-block bg-secondary px-4 py-1 rounded-full font-label-bold text-sm uppercase shadow-md">
-                2026 · 한정 이벤트
-              </span>
-              <h2 className="font-display-lg text-[clamp(1.75rem,5vw,3rem)] leading-tight drop-shadow-md">
-                Pokemon Festival
-              </h2>
-              <p className="font-headline-md text-primary-container tracking-wide">POCKET ADVENTURE</p>
-              <p className="font-body-md text-white/90 leading-relaxed break-keep [word-break:keep-all]">
-                오박사님과 함께하는 퀴즈·AI 도감·맞춤 이벤트 추천까지! 지금 페스티벌을 즐겨 보세요.
-              </p>
+          <div className="p-6 sm:p-8 space-y-4 text-center">
+            <span className="inline-block bg-secondary text-white px-4 py-1 rounded-full font-label-bold text-sm uppercase shadow-md">
+              2026 · 한정 이벤트
+            </span>
+            <h2 className="font-display-lg text-[clamp(1.5rem,5vw,2.25rem)] leading-tight text-on-surface">
+              포켓몬 페스티벌 2026
+            </h2>
+            <p className="font-headline-md text-primary tracking-wide">POCKET ADVENTURE</p>
+            <p className="w-full text-body-md text-on-surface-variant leading-relaxed [word-break:keep-all] text-pretty">
+              오박사님과 함께하는 퀴즈·AI 도감·맞춤 이벤트 추천까지!
+              <br />
+              지금 페스티벌을 즐겨 보세요.
+            </p>
+            <div className="flex justify-center pt-2">
               <button
                 type="button"
-                className="bg-primary-container text-on-primary-container font-label-bold px-8 py-4 rounded-full border-b-4 border-primary shadow-lg hover:scale-105 active:scale-95 transition-all text-lg uppercase tracking-wider toy-button-shadow-light"
+                className="bg-primary-container text-on-primary-container font-nanum-action px-8 py-4 rounded-full border-b-4 border-primary shadow-lg hover:scale-105 active:scale-95 transition-all text-lg tracking-wide toy-button-shadow-light"
                 onClick={() => {
                   document.getElementById('daily-challenge')?.scrollIntoView({ behavior: 'smooth' })
                 }}
@@ -573,7 +568,7 @@ export default function EventsPage() {
                     <button
                       type="button"
                       className={
-                        'text-xs font-label-bold px-4 py-1.5 rounded-full neomorph-button shrink-0 ' +
+                        'text-xs font-nanum-action px-4 py-1.5 rounded-full neomorph-button shrink-0 ' +
                         card.btnClass
                       }
                       onClick={(e) => {
@@ -634,7 +629,7 @@ export default function EventsPage() {
                     </div>
                     <button
                       type="button"
-                      className={'font-label-bold px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
+                      className={'font-nanum-action px-6 py-2 rounded-full neomorph-button ' + ev.ctaClass}
                       onClick={() => void registerEvent(ev.id, ev.title, ev.actionType)}
                     >
                       {ev.cta}

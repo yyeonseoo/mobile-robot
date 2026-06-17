@@ -59,9 +59,7 @@ function TabItem({
       </span>
       <span
         className={
-          'text-[10px] font-bold leading-tight text-center ' +
-          (label.length > 4 ? 'px-0.5' : 'whitespace-nowrap') +
-          ' ' +
+          'font-pinkfong-nav block w-full min-w-0 px-0.5 ' +
           (isActive ? 'text-slate-900' : 'text-on-surface-variant')
         }
       >
@@ -78,9 +76,9 @@ export default function BottomNav() {
   const go = (to: string) => nav(to)
 
   return (
-    <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="pointer-events-auto w-full max-w-xl min-w-[320px] rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-2 py-2.5">
-        <div className="flex w-full flex-row items-end justify-between gap-0.5">
+    <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-2 pointer-events-none">
+      <div className="pointer-events-auto w-full max-w-[min(100%,28rem)] min-w-0 rounded-full border-4 border-slate-900 bg-surface-container-low shadow-[0_8px_0_0_#000] px-1 py-2.5 [container-type:inline-size]">
+        <div className="flex w-full flex-row items-end justify-between gap-0">
           {TABS.map((tab) => (
             <TabItem
               key={tab.key}

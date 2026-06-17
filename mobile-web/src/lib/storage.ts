@@ -44,5 +44,6 @@ export function clearVisitorSession() {
   clearVisitorToken()
   clearNickname()
   clearPhone()
+  localStorage.removeItem('stampRallyEventActions')
 }
 

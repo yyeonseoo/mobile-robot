@@ -1,6 +1,8 @@
 import { authHeaders, jsonFetch } from './api'
 import { getVisitorToken } from './storage'
 
+const EVENT_ACTIONS_KEY = 'stampRallyEventActions'
+
 export type VisitorSession = {
   visitorToken: string
   nickname?: string | null
@@ -34,6 +36,35 @@ export type VisitorEventAction = {
   createdAt: string
 }
 
+function loadLocalEventActions(): VisitorEventAction[] {
+  try {
+    const raw = localStorage.getItem(EVENT_ACTIONS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as VisitorEventAction[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveLocalEventActions(actions: VisitorEventAction[]) {
+  localStorage.setItem(EVENT_ACTIONS_KEY, JSON.stringify(actions))
+}
+
+function mergeEventActions(
+  serverActions: VisitorEventAction[] | undefined,
+  localActions: VisitorEventAction[]
+): VisitorEventAction[] {
+  const map = new Map<string, VisitorEventAction>()
+  for (const action of serverActions || []) {
+    map.set(`${action.eventId}:${action.actionType}`, action)
+  }
+  for (const action of localActions) {
+    map.set(`${action.eventId}:${action.actionType}`, action)
+  }
+  return Array.from(map.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
 export function normalizePhoneInput(raw: string): string {
   return raw.replace(/\D/g, '')
 }
@@ -52,7 +83,14 @@ export async function createVisitorSession(nickname: string, phoneNumber: string
 
 export async function fetchVisitorProfile(): Promise<VisitorProfile | null> {
   if (!getVisitorToken()) return null
-  return jsonFetch<VisitorProfile>('/api/visitor/me', { headers: authHeaders() })
+  const profile = await jsonFetch<Omit<VisitorProfile, 'eventActions'> & { eventActions?: VisitorEventAction[] }>(
+    '/api/visitor/me',
+    { headers: authHeaders() }
+  )
+  return {
+    ...profile,
+    eventActions: mergeEventActions(profile.eventActions, loadLocalEventActions()),
+  }
 }
 
 export async function submitQuizResult(body: {
@@ -90,11 +128,19 @@ export async function recordVisitorEventAction(
   eventId: string,
   actionType = 'join'
 ): Promise<VisitorEventAction> {
-  return jsonFetch<VisitorEventAction>('/api/visitor/event-actions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ eventId, actionType, enabled: true }),
-  })
+  const existing = loadLocalEventActions().find(
+    (a) => a.eventId === eventId && a.actionType === actionType
+  )
+  if (existing) return existing
+
+  const action: VisitorEventAction = {
+    id: Date.now(),
+    eventId,
+    actionType,
+    createdAt: new Date().toISOString(),
+  }
+  saveLocalEventActions([action, ...loadLocalEventActions()])
+  return action
 }
 
 export type VisitorPhotoItem = {

@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/mobile/app/fonts/PinkfongBabyShark-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/mobile/app/fonts/PinkfongBabyShark-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pinkfong Baby Shark";
+  src: url("/mobile/app/fonts/PinkfongBabyShark-Bold.otf") format("opentype"),
+    url("/mobile/app/fonts/PinkfongBabyShark-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NanumSquareRound";
+  src: url("/mobile/app/fonts/NanumSquareRoundOTF-EB.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Tailwind v4 CSS-first tokens to mirror the provided HTML's config */
 @theme {
   /* colors */
@@ -52,10 +85,8 @@
   --font-body-md: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
     "Noto Sans KR", sans-serif;
   --font-body-lg: var(--font-body-md);
-  --font-headline-md: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
-    "Noto Sans KR", sans-serif;
-  --font-display-lg: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
-    "Noto Sans KR", sans-serif;
+  --font-headline-md: "Pinkfong Baby Shark", "PinkfongBabyShark", system-ui, sans-serif;
+  --font-display-lg: "Pinkfong Baby Shark", "PinkfongBabyShark", system-ui, sans-serif;
   --font-label-bold: "Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* font size */
@@ -182,4 +213,52 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.font-pinkfong {
+  font-family: "Pinkfong Baby Shark", "PinkfongBabyShark", sans-serif;
+  font-weight: 700;
+}
+
+.font-pinkfong-hero {
+  font-family: "Pinkfong Baby Shark", "PinkfongBabyShark", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.25rem, 4.8vw, 1.875rem);
+  line-height: 1.25;
+  word-break: keep-all;
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.font-pinkfong-menu {
+  font-family: "Pinkfong Baby Shark", "PinkfongBabyShark", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.125rem, 4.8vw, 1.5rem);
+  line-height: 1.15;
+  white-space: nowrap;
+  word-break: keep-all;
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.font-pinkfong-nav {
+  font-family: "Pinkfong Baby Shark", "PinkfongBabyShark", sans-serif;
+  font-weight: 700;
+  /* 6탭 기준: 바 너비에 맞춰 자동 축소 (겹침 방지) */
+  font-size: clamp(0.4375rem, 2.05cqi, 0.6875rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  word-break: keep-all;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.font-nanum-action {
+  font-family: "NanumSquareRound", "Nanum Square Round", sans-serif;
+  font-weight: 800;
 }
