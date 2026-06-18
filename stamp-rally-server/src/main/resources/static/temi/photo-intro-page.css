@@ -64,8 +64,11 @@ body.temi-photo-intro .tl-nav a[href="photo-intro.html"] {
 .pi-preview-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(145deg, #1e293b 0%, #ffcb05 55%, #3f50ce 100%);
-  opacity: 0.85;
+  background-color: #1e293b;
+  background-image: url("images/photo-booth-preview.png");
+  background-position: center;
+  background-size: cover;
+  opacity: 1;
 }
 
 .pi-preview-inner {

@@ -431,19 +431,23 @@ html.temi-landing-doc body.temi-landing.temi-legacy .stage {
 }
 
 .tl-card-thumb--rally {
-  background-image: linear-gradient(135deg, #ffdad5 0%, #ffb4a9 50%, #e90d11 100%);
+  background-color: #ffdad5;
+  background-image: url("images/program-stamp-rally.png");
 }
 
 .tl-card-thumb--map {
-  background-image: linear-gradient(135deg, #caceff 0%, #3f50ce 100%);
+  background-color: #caceff;
+  background-image: url("images/program-map-guide.png");
 }
 
 .tl-card-thumb--photo {
-  background-image: linear-gradient(135deg, #ffe08d 0%, #f2c000 100%);
+  background-color: #ffe08d;
+  background-image: url("images/program-photo-booth.png");
 }
 
 .tl-card-thumb--event {
-  background-image: linear-gradient(135deg, #2f3131 0%, #745b00 100%);
+  background-color: #2f3131;
+  background-image: url("images/program-events-quiz.png");
 }
 
 .tl-card-body {
